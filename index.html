@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product AI Seller & Inventory Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-out flex items-center gap-3 bg-slate-800 text-slate-100 border border-slate-700 px-4 py-3 rounded-xl shadow-2xl">
+        <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-brand-500"></i>
+        <span id="toast-message" class="text-sm font-medium">Operazione completata!</span>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-brand-500/10 rounded-xl border border-brand-500/20">
+                        <i data-lucide="sparkles" class="w-6 h-6 text-brand-500"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white tracking-tight">Product AI Seller</h1>
+                        <p class="text-xs text-slate-400">Analisi, Foto IA e Inventario</p>
+                    </div>
+                </div>
+
+                <!-- Navigation & API Key Settings -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleApiKeyModal()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-colors flex items-center gap-2 text-xs font-semibold">
+                        <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+                        <span class="hidden sm:inline">Chiave API IA</span>
+                    </button>
+
+                    <nav class="flex space-x-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/50">
+                        <button id="tab-creator-btn" onclick="switchTab('creator')" class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-600 text-white shadow-sm">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span>Nuovo Prodotto</span>
+                        </button>
+                        <button id="tab-inventory-btn" onclick="switchTab('inventory')" class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-white">
+                            <i data-lucide="boxes" class="w-4 h-4"></i>
+                            <span>Inventario</span>
+                            <span id="inventory-count-badge" class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full text-xs">0</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- TAB 1: PRODUCT CREATOR & ANALYSIS -->
+        <section id="tab-creator" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Upload & Image Control -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="camera" class="w-5 h-5 text-brand-500"></i>
+                                Foto Prodotto Base (<span id="photo-count">0</span>/3)
+                            </h2>
+                            <span class="text-xs text-slate-400">Massimo 3 foto</span>
+                        </div>
+
+                        <!-- Dropzone -->
+                        <div id="dropzone" onclick="document.getElementById('file-input').click()" class="border-2 border-dashed border-slate-600 hover:border-brand-500/70 bg-slate-900/50 hover:bg-slate-900/80 rounded-xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-3">
+                            <div class="p-3 bg-slate-800 rounded-full text-brand-500 border border-slate-700">
+                                <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-slate-200">Carica le tue foto qui o <span class="text-brand-500 underline font-semibold">Sfoglia</span></p>
+                                <p class="text-xs text-slate-400 mt-1">Carica fino a 3 foto reali del tuo prodotto</p>
+                            </div>
+                            <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+                        </div>
+
+                        <!-- Image Previews Container -->
+                        <div class="mt-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Anteprima Foto Caricate</span>
+                                <button onclick="clearAllPhotos()" id="btn-clear-photos" class="text-xs text-slate-400 hover:text-rose-400 hidden flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Svuota foto
+                                </button>
+                            </div>
+                            <div id="image-previews" class="grid grid-cols-3 gap-3 min-h-[100px] bg-slate-900/40 p-2 rounded-xl border border-slate-700/50">
+                                <div class="col-span-3 text-center py-6 text-slate-500 text-xs flex flex-col items-center gap-1">
+                                    <i data-lucide="image" class="w-6 h-6 opacity-40"></i>
+                                    <span>Nessuna foto caricata</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Actions for Photos -->
+                        <div class="mt-6 space-y-3 pt-4 border-t border-slate-700/60">
+                            <button id="btn-analyze" onclick="analyzeProductWithAI()" disabled class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-brand-600/20 flex items-center justify-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                <span>1. Analizza Prodotto con IA</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Studio Photo Suite Generator (5 Diverse Shots) -->
+                    <div class="bg-slate-800/60 border border-purple-500/30 rounded-2xl p-5 shadow-xl backdrop-blur-sm space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                    <i data-lucide="wand-2" class="w-4 h-4 text-purple-400"></i>
+                                    Generatore IA: Set di 5 Foto Uniche
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Genera 5 prospettive uniche mantenendo colore e prodotto identici</p>
+                            </div>
+                            <span class="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-bold rounded-full border border-purple-500/30">MAX 5 FOTO</span>
+                        </div>
+
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            L'IA genererà fino a 5 scatti identici nell'aspetto e colore ma in diversi contesti:
+                            <span class="block text-slate-400 text-[11px] mt-1">1. Studio Pulito • 2. Dettaglio/Texture • 3. In-Uso/Indossato • 4. Vista Angolata • 5. Contesto Ambientato</span>
+                        </p>
+
+                        <button id="btn-generate-5-photos" onclick="generateFiveDiversePhotos()" disabled class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2">
+                            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                            <span>Rigenera 5 Foto Migliorate con IA</span>
+                        </button>
+
+                        <!-- Generated 5 Photos Grid Preview -->
+                        <div id="ai-generated-previews-container" class="hidden pt-3 border-t border-slate-700/60 space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs font-semibold text-purple-300">Foto Generate dall'IA (<span id="generated-count">0</span>/5)</span>
+                            </div>
+                            <div id="ai-generated-previews" class="grid grid-cols-5 gap-2">
+                                <!-- Injected dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Editable Product Details Form -->
+                <div class="lg:col-span-7">
+                    <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-700/60 pb-3">
+                            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+                                <i data-lucide="file-edit" class="w-5 h-5 text-brand-500"></i>
+                                Scheda Prodotto Modificabile
+                            </h2>
+                            <span id="analysis-status-badge" class="text-xs px-2.5 py-1 bg-slate-700 text-slate-300 rounded-full font-medium flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-slate-400"></span> In attesa di analisi
+                            </span>
+                        </div>
+
+                        <!-- Form Inputs -->
+                        <div class="space-y-4">
+                            <!-- Title & Color -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-2 space-y-1">
+                                    <label class="text-xs font-medium text-slate-300 flex justify-between">
+                                        <span>Nome Prodotto</span>
+                                        <button onclick="copyToClipboard('input-name')" class="text-brand-500 hover:text-brand-400 text-[11px] flex items-center gap-0.5"><i data-lucide="copy" class="w-3 h-3"></i> Copia</button>
+                                    </label>
+                                    <input type="text" id="input-name" placeholder="Es. Giacca di Pelle Nera Vintage..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-medium text-slate-300 flex justify-between">
+                                        <span>Colore Esatto</span>
+                                        <button onclick="copyToClipboard('input-color')" class="text-brand-500 hover:text-brand-400 text-[11px] flex items-center gap-0.5"><i data-lucide="copy" class="w-3 h-3"></i> Copia</button>
+                                    </label>
+                                    <input type="text" id="input-color" placeholder="Es. Nero Opaco" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors">
+                                </div>
+                            </div>
+
+                            <!-- Pricing Matrix & Search Info -->
+                            <div class="p-4 bg-slate-900/70 border border-slate-700/80 rounded-xl space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-1.5">
+                                        <i data-lucide="search" class="w-4 h-4"></i>
+                                        Prezzi & Ricerca di Mercato Reale
+                                    </label>
+                                    <div class="flex items-center gap-3 text-xs">
+                                        <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                                            <input type="radio" name="markup-rate" value="10" onchange="calculatePrices()" class="text-brand-500 focus:ring-brand-500">
+                                            +10%
+                                        </label>
+                                        <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                                            <input type="radio" name="markup-rate" value="20" checked onchange="calculatePrices()" class="text-brand-500 focus:ring-brand-500">
+                                            +20% (Consigliato)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                    <div class="space-y-1">
+                                        <span class="text-[11px] font-medium text-slate-400">Media Mercato Reale (€)</span>
+                                        <input type="number" step="0.01" id="input-market-price" oninput="calculatePrices()" placeholder="0.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 focus:outline-none focus:border-brand-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <span class="text-[11px] font-medium text-brand-400 font-semibold">Prezzo di Vendita (€)</span>
+                                        <input type="number" step="0.01" id="input-list-price" placeholder="0.00" class="w-full bg-slate-800 border border-brand-500/50 rounded-lg px-3 py-2 text-sm font-bold text-brand-400 focus:outline-none focus:border-brand-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <span class="text-[11px] font-medium text-amber-400 font-semibold">Prezzo Scontato (€)</span>
+                                        <input type="number" step="0.01" id="input-discount-price" placeholder="0.00" class="w-full bg-slate-800 border border-amber-500/50 rounded-lg px-3 py-2 text-sm font-bold text-amber-400 focus:outline-none focus:border-brand-500">
+                                    </div>
+                                </div>
+                                <div id="search-sources-container" class="hidden text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                                    <span class="font-medium text-slate-300">Fonti di mercato verificate:</span>
+                                    <div id="search-sources-list" class="flex flex-wrap gap-2 mt-1"></div>
+                                </div>
+                            </div>
+
+                            <!-- Fluid Description -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs font-medium text-slate-300">Descrizione Completa & Fluida</label>
+                                    <button onclick="copyToClipboard('input-description')" class="text-brand-500 hover:text-brand-400 text-[11px] flex items-center gap-0.5"><i data-lucide="copy" class="w-3 h-3"></i> Copia Descrizione</button>
+                                </div>
+                                <textarea id="input-description" rows="6" placeholder="Descrizione dettagliata ma fluida, naturale ed efficacie per la vendita..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 leading-relaxed focus:outline-none focus:border-brand-500 transition-colors"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Save to Inventory Action -->
+                        <div class="pt-4 border-t border-slate-700/60 flex flex-col sm:flex-row gap-3">
+                            <button onclick="resetCurrentProductForm()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Azzeramento Scheda
+                            </button>
+                            <button onclick="saveToInventory()" class="flex-1 py-3 px-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-brand-600/20 flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-5 h-5"></i>
+                                <span>Salva Prodotto in Inventario</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: INVENTORY MANAGEMENT -->
+        <section id="tab-inventory" class="hidden space-y-6">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/60 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="boxes" class="w-5 h-5 text-brand-500"></i>
+                            Inventario Prodotti Salvati
+                        </h2>
+                        <p class="text-xs text-slate-400">Tutti i prodotti salvati possono essere liberamente modificati, consultati o eliminati.</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Cerca nell'inventario..." class="bg-slate-900/90 border border-slate-700 rounded-xl px-3.5 py-1.5 text-xs text-white focus:outline-none focus:border-brand-500 w-full sm:w-64">
+                    </div>
+                </div>
+
+                <!-- Inventory Grid -->
+                <div id="inventory-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Injected dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="inventory-empty-state" class="text-center py-12 space-y-3">
+                    <div class="p-4 bg-slate-900/60 w-16 h-16 rounded-full mx-auto flex items-center justify-center border border-slate-700 text-slate-500">
+                        <i data-lucide="package-x" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-slate-300">Inventario Vuoto</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">Non hai ancora salvato alcun prodotto. Vai alla sezione "Nuovo Prodotto", analizza l'oggetto e salvalo qui.</p>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- EDIT INVENTORY ITEM MODAL -->
+    <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-brand-500"></i> Modifica Prodotto Salvato
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <input type="hidden" id="edit-item-id">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2 space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Nome Prodotto</label>
+                        <input type="text" id="edit-item-name" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-slate-300">Colore</label>
+                        <input type="text" id="edit-item-color" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-medium text-slate-400">Media Mercato (€)</label>
+                        <input type="number" step="0.01" id="edit-item-market-price" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-medium text-brand-400">Prezzo Vendita (€)</label>
+                        <input type="number" step="0.01" id="edit-item-list-price" class="w-full bg-slate-800 border border-brand-500/50 rounded-lg px-3 py-2 text-sm text-brand-400 font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-medium text-amber-400">Prezzo Scontato (€)</label>
+                        <input type="number" step="0.01" id="edit-item-discount-price" class="w-full bg-slate-800 border border-amber-500/50 rounded-lg px-3 py-2 text-sm text-amber-400 font-bold">
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-medium text-slate-300">Descrizione</label>
+                    <textarea id="edit-item-description" rows="5" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-brand-500"></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-medium text-slate-300">Galleria Foto Salvate (Clicca per scaricare)</label>
+                    <div id="edit-item-photos" class="flex flex-wrap gap-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button onclick="closeEditModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl">Annulla</button>
+                <button onclick="saveEditModalChanges()" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow-md shadow-brand-600/20">Salva Modifiche</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API KEY MODAL -->
+    <div id="api-key-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="key" class="w-5 h-5 text-amber-400"></i> Impostazioni Gemini API Key
+                </h3>
+                <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Per far funzionare l'analisi IA e la generazione delle foto online su GitHub, inserisci la tua **Gemini API Key**. La chiave verrà salvata esclusivamente nel tuo browser (`localStorage`).
+            </p>
+            <div class="space-y-1">
+                <label class="text-xs font-medium text-slate-300">Google Gemini API Key</label>
+                <input type="password" id="custom-api-key" placeholder="AIzaSy..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="saveApiKey()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow-md">Salva Chiave API</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Global State
+        let loadedPhotos = []; // Objects: { id, file, dataUrl }
+        let generatedAiPhotos = []; // Base64 or Data URLs generated by Gemini
+        let inventory = []; // Array of saved product objects
+        let isSavedCurrent = false; // Flag to check if current form was saved
+
+        // Helper to retrieve API Key
+        function getApiKey() {
+            const savedKey = localStorage.getItem('GEMINI_API_KEY');
+            if (savedKey) return savedKey;
+            if (typeof window.apiKey !== 'undefined' && window.apiKey) return window.apiKey;
+            return '';
+        }
+
+        // Toggle API Key modal
+        function toggleApiKeyModal() {
+            const modal = document.getElementById('api-key-modal');
+            const input = document.getElementById('custom-api-key');
+            input.value = localStorage.getItem('GEMINI_API_KEY') || '';
+            modal.classList.toggle('hidden');
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('custom-api-key').value.trim();
+            if (key) {
+                localStorage.setItem('GEMINI_API_KEY', key);
+                showToast("Chiave API salvata con successo!");
+            } else {
+                localStorage.removeItem('GEMINI_API_KEY');
+                showToast("Chiave API rimossa");
+            }
+            toggleApiKeyModal();
+        }
+
+        // Initialize icons on DOM content loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            renderPreviews();
+            renderInventory();
+        });
+
+        // Show Toast Notification
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMessage.textContent = message;
+            if (isError) {
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+                toastIcon.className = 'w-5 h-5 text-rose-500';
+            } else {
+                toastIcon.setAttribute('data-lucide', 'check-circle');
+                toastIcon.className = 'w-5 h-5 text-brand-500';
+            }
+            if (window.lucide) lucide.createIcons();
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        // Tab Navigation with Auto-reset check if unsaved
+        function switchTab(tab) {
+            if (tab === 'inventory' && loadedPhotos.length > 0 && !isSavedCurrent) {
+                resetCurrentProductForm();
+            }
+
+            const creatorTab = document.getElementById('tab-creator');
+            const inventoryTab = document.getElementById('tab-inventory');
+            const creatorBtn = document.getElementById('tab-creator-btn');
+            const inventoryBtn = document.getElementById('tab-inventory-btn');
+
+            if (tab === 'creator') {
+                creatorTab.classList.remove('hidden');
+                inventoryTab.classList.add('hidden');
+                creatorBtn.className = 'flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-600 text-white shadow-sm';
+                inventoryBtn.className = 'flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-white';
+            } else {
+                creatorTab.classList.add('hidden');
+                inventoryTab.classList.remove('hidden');
+                creatorBtn.className = 'flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-white';
+                inventoryBtn.className = 'flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-600 text-white shadow-sm';
+                renderInventory();
+            }
+        }
+
+        // Handle Image Selection and conversion to DataURL
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files || []);
+            if (files.length === 0) return;
+
+            const remainingSlots = 3 - loadedPhotos.length;
+            if (remainingSlots <= 0) {
+                showToast("Puoi caricare al massimo 3 foto.", true);
+                return;
+            }
+
+            const filesToProcess = files.slice(0, remainingSlots);
+            let processedCount = 0;
+
+            filesToProcess.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    loadedPhotos.push({
+                        id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        file: file,
+                        dataUrl: e.target.result
+                    });
+                    processedCount++;
+                    if (processedCount === filesToProcess.length) {
+                        isSavedCurrent = false;
+                        renderPreviews();
+                        updateButtonStates();
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+
+            event.target.value = '';
+        }
+
+        // Render Loaded Photo Previews
+        function renderPreviews() {
+            const previewsContainer = document.getElementById('image-previews');
+            const countLabel = document.getElementById('photo-count');
+            const clearBtn = document.getElementById('btn-clear-photos');
+
+            countLabel.textContent = loadedPhotos.length;
+
+            if (loadedPhotos.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            if (loadedPhotos.length === 0) {
+                previewsContainer.innerHTML = `
+                    <div class="col-span-3 text-center py-6 text-slate-500 text-xs flex flex-col items-center gap-1">
+                        <i data-lucide="image" class="w-6 h-6 opacity-40"></i>
+                        <span>Nessuna foto caricata</span>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            previewsContainer.innerHTML = loadedPhotos.map((photo, index) => `
+                <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-900 aspect-square shadow-md">
+                    <img src="${photo.dataUrl}" alt="Anteprima ${index + 1}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button onclick="removePhoto('${photo.id}')" class="p-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg shadow" title="Rimuovi foto">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <span class="absolute bottom-1 left-1 px-1.5 py-0.5 bg-slate-900/80 text-[10px] text-slate-300 rounded border border-slate-700">Foto ${index + 1}</span>
+                </div>
+            `).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Remove Single Photo
+        function removePhoto(id) {
+            loadedPhotos = loadedPhotos.filter(p => p.id !== id);
+            renderPreviews();
+            updateButtonStates();
+        }
+
+        // Clear All Photos
+        function clearAllPhotos() {
+            loadedPhotos = [];
+            renderPreviews();
+            updateButtonStates();
+        }
+
+        // Update action buttons state
+        function updateButtonStates() {
+            const btnAnalyze = document.getElementById('btn-analyze');
+            const btnGen5 = document.getElementById('btn-generate-5-photos');
+
+            const hasPhotos = loadedPhotos.length > 0;
+            btnAnalyze.disabled = !hasPhotos;
+            btnGen5.disabled = !hasPhotos;
+        }
+
+        // Calculate Pricing Matrix (+10% or +20%)
+        function calculatePrices() {
+            const marketInput = document.getElementById('input-market-price');
+            const listInput = document.getElementById('input-list-price');
+            const discountInput = document.getElementById('input-discount-price');
+            
+            const selectedMarkup = document.querySelector('input[name="markup-rate"]:checked');
+            const markupPercent = selectedMarkup ? parseFloat(selectedMarkup.value) : 20;
+
+            const marketPrice = parseFloat(marketInput.value);
+            if (isNaN(marketPrice) || marketPrice <= 0) return;
+
+            const listPrice = marketPrice * (1 + (markupPercent / 100));
+            listInput.value = listPrice.toFixed(2);
+            discountInput.value = marketPrice.toFixed(2);
+        }
+
+        // Exponential backoff fetch wrapper
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (response.status === 429) {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                        continue;
+                    }
+                    throw new Error(`HTTP Error status: ${response.status}`);
+                } catch (err) {
+                    if (i === maxRetries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // STEP 1: Analyze Product using Gemini API + Google Search Grounding for REAL Market Prices
+        async function analyzeProductWithAI() {
+            if (loadedPhotos.length === 0) return;
+
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                showToast("Inserisci prima la tua Gemini API Key in alto a destra!", true);
+                toggleApiKeyModal();
+                return;
+            }
+
+            const btnAnalyze = document.getElementById('btn-analyze');
+            const badge = document.getElementById('analysis-status-badge');
+            
+            btnAnalyze.disabled = true;
+            btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>Analisi di mercato in corso...</span>`;
+            badge.className = 'text-xs px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full font-medium flex items-center gap-1.5 border border-amber-500/30';
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Analisi & Ricerca Web...`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                // Prepare visual parts
+                const imageParts = loadedPhotos.map(p => {
+                    const base64Data = p.dataUrl.split(',')[1];
+                    const mimeType = p.dataUrl.substring(p.dataUrl.indexOf(':') + 1, p.dataUrl.indexOf(';'));
+                    return {
+                        inlineData: { mimeType: mimeType, data: base64Data }
+                    };
+                });
+
+                const userPrompt = `Analizza attentamente ed in dettaglio le foto allegate di questo prodotto.
+Riconosci il prodotto esatto e CERCA SUL WEB (su e-commerce, siti verificati e marketplace affidabili) la media reale dei prezzi di vendita attuali per questo specifico modello/articolo o uno equivalente.
+
+REGOLE FONDAMENTALI:
+1. "colore_esatto": Deve rispecchiare fedelmente ed esattamente il colore visibile nelle foto senza alcuna modifica.
+2. "descrizione_fluida": Scrivi una descrizione d'impatto ed efficace per la vendita, ma che sia NORMALE, FLUIDA E NATURALE al 100%. Tuttavia, devi includere ASSOLUTAMENTE TUTTI i dettagli del prodotto: materiali, finiture, marchio se visibile, utilizzo, taglia o dimensioni evidenti, dettagli costruttivi e punti di forza senza omettere nulla.
+3. "prezzo_media_mercato": Inserisci una cifra numerica precisa basata sulla media dei prezzi realmente trovati online.
+
+Fornisci la risposta strettamente in formato JSON:
+{
+    "nome_prodotto": "Nome commerciale esatto e preciso",
+    "colore_esatto": "Colore esatto visibile in foto",
+    "prezzo_media_mercato": 49.99,
+    "descrizione_fluida": "Descrizione fluida ma completa di ogni dettaglio visibile e materiale..."
+}`;
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [
+                                { text: userPrompt },
+                                ...imageParts
+                            ]
+                        }
+                    ],
+                    tools: [{ "google_search": {} }],
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                const responseText = candidate?.content?.parts?.[0]?.text;
+
+                if (!responseText) throw new Error("Risposta vuota dall'IA.");
+
+                const parsed = JSON.parse(responseText);
+
+                // Populate Form
+                document.getElementById('input-name').value = parsed.nome_prodotto || '';
+                document.getElementById('input-color').value = parsed.colore_esatto || '';
+                document.getElementById('input-market-price').value = parsed.prezzo_media_mercato || 0;
+                document.getElementById('input-description').value = parsed.descrizione_fluida || '';
+
+                // Calculate Prices automatically
+                calculatePrices();
+
+                // Grounding sources rendering
+                const sourcesContainer = document.getElementById('search-sources-container');
+                const sourcesList = document.getElementById('search-sources-list');
+                const groundingAttributions = candidate?.groundingMetadata?.groundingAttributions || [];
+
+                const validSources = groundingAttributions
+                    .map(attr => ({ title: attr.web?.title, uri: attr.web?.uri }))
+                    .filter(s => s.title && s.uri);
+
+                if (validSources.length > 0) {
+                    sourcesList.innerHTML = validSources.slice(0, 4).map(s => `
+                        <a href="${s.uri}" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-brand-400 rounded border border-slate-700 text-[10px] flex items-center gap-1">
+                            <i data-lucide="external-link" class="w-2.5 h-2.5"></i> ${s.title}
+                        </a>
+                    `).join('');
+                    sourcesContainer.classList.remove('hidden');
+                } else {
+                    sourcesContainer.classList.add('hidden');
+                }
+
+                badge.className = 'text-xs px-2.5 py-1 bg-brand-500/20 text-brand-300 rounded-full font-medium flex items-center gap-1.5 border border-brand-500/30';
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-brand-400"></span> Analisi Completata`;
+                showToast("Prodotto analizzato con successo!");
+
+            } catch (error) {
+                console.error(error);
+                showToast("Errore durante l'analisi del prodotto: " + error.message, true);
+                badge.className = 'text-xs px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-full font-medium flex items-center gap-1.5 border border-rose-500/30';
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Errore Analisi`;
+            } finally {
+                btnAnalyze.disabled = false;
+                btnAnalyze.innerHTML = `<i data-lucide="sparkles" class="w-5 h-5"></i> <span>1. Analizza Prodotto con IA</span>`;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // STEP 2: Generate 5 Unique Diverse AI Photos strictly matching the object/color
+        async function generateFiveDiversePhotos() {
+            if (loadedPhotos.length === 0) return;
+
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                showToast("Inserisci prima la tua Gemini API Key in alto a destra!", true);
+                toggleApiKeyModal();
+                return;
+            }
+
+            const btnGen = document.getElementById('btn-generate-5-photos');
+            const previewsContainer = document.getElementById('ai-generated-previews');
+            const containerBox = document.getElementById('ai-generated-previews-container');
+            const generatedCountLabel = document.getElementById('generated-count');
+
+            btnGen.disabled = true;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>Generazione 5 Foto in corso...</span>`;
+            
+            containerBox.classList.remove('hidden');
+            previewsContainer.innerHTML = Array(5).fill(0).map((_, i) => `
+                <div class="aspect-square bg-slate-900 border border-slate-700 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-500 text-[10px] animate-pulse">
+                    <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+                    <span>Foto ${i+1}...</span>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+
+            generatedAiPhotos = [];
+
+            const base64Data = loadedPhotos[0].dataUrl.split(',')[1];
+            const mimeType = loadedPhotos[0].dataUrl.substring(loadedPhotos[0].dataUrl.indexOf(':') + 1, loadedPhotos[0].dataUrl.indexOf(';'));
+
+            const stylePrompts = [
+                "Scatto di studio fotografico professionale pulito con sfondo neutro chiaro, illuminazione morbida.",
+                "Inquadratura ravvicinata di dettaglio (close-up) della texture, materiale e dettagli unici dell'oggetto.",
+                "Inquadratura in contesto d'uso/ambientato realistico mantenendo l'oggetto identico.",
+                "Vista angolata/prospettica da un'angolazione diversa dell'oggetto intero.",
+                "Contesto lifestyle premium elegante da catalogo di vendita di alta gamma."
+            ];
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+            for (let i = 0; i < stylePrompts.length; i++) {
+                try {
+                    const promptText = `ATTENZIONE REGOLA FERREA: MANTIENI L'OGGETTO, I DETTAGLI, IL MATERIALE E IL COLORE RIGOROSAMENTE ED ESATTAMENTE IDENTICI E INALTERATI RISPETTO ALL'IMMAGINE FORNITA. NESSUNA VARIAZIONE DI COLORE O FORMA.
+Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
+
+                    const payload = {
+                        contents: [{
+                            role: "user",
+                            parts: [
+                                { text: promptText },
+                                { inlineData: { mimeType: mimeType, data: base64Data } }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseModalities: ['IMAGE']
+                        }
+                    };
+
+                    const response = await fetchWithRetry(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+                    if (part && part.inlineData) {
+                        const imgUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                        generatedAiPhotos.push(imgUrl);
+                    }
+                } catch (e) {
+                    console.error("Errore generazione foto " + (i+1), e);
+                }
+            }
+
+            generatedCountLabel.textContent = generatedAiPhotos.length;
+
+            if (generatedAiPhotos.length === 0) {
+                previewsContainer.innerHTML = `<div class="col-span-5 text-center text-xs text-rose-400 py-3">Impossibile generare foto al momento. Riprova.</div>`;
+            } else {
+                previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
+                    <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square">
+                        <img src="${imgUrl}" class="w-full h-full object-cover">
+                        <a href="${imgUrl}" download="prodotto_ia_foto_${index+1}.png" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                `).join('');
+                showToast(`Generate ${generatedAiPhotos.length} foto con successo!`);
+            }
+
+            btnGen.disabled = false;
+            btnGen.innerHTML = `<i data-lucide="layout-grid" class="w-5 h-5"></i> <span>Rigenera 5 Foto Migliorate con IA</span>`;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Copy text helper
+        function copyToClipboard(elementId) {
+            const input = document.getElementById(elementId);
+            if (!input || !input.value) {
+                showToast("Nessun testo da copiare", true);
+                return;
+            }
+            input.select();
+            document.execCommand('copy');
+            showToast("Testo copiato negli appunti!");
+        }
+
+        // Reset Current Form
+        function resetCurrentProductForm() {
+            loadedPhotos = [];
+            generatedAiPhotos = [];
+            isSavedCurrent = false;
+
+            document.getElementById('file-input').value = '';
+            document.getElementById('input-name').value = '';
+            document.getElementById('input-color').value = '';
+            document.getElementById('input-market-price').value = '';
+            document.getElementById('input-list-price').value = '';
+            document.getElementById('input-discount-price').value = '';
+            document.getElementById('input-description').value = '';
+
+            document.getElementById('ai-generated-previews-container').classList.add('hidden');
+            document.getElementById('search-sources-container').classList.add('hidden');
+
+            const badge = document.getElementById('analysis-status-badge');
+            badge.className = 'text-xs px-2.5 py-1 bg-slate-700 text-slate-300 rounded-full font-medium flex items-center gap-1.5';
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span> In attesa di analisi`;
+
+            renderPreviews();
+            updateButtonStates();
+            showToast("Scheda prodotto azzerata");
+        }
+
+        // Save Current Product to Inventory
+        function saveToInventory() {
+            const name = document.getElementById('input-name').value.trim();
+            const color = document.getElementById('input-color').value.trim();
+            const marketPrice = parseFloat(document.getElementById('input-market-price').value) || 0;
+            const listPrice = parseFloat(document.getElementById('input-list-price').value) || 0;
+            const discountPrice = parseFloat(document.getElementById('input-discount-price').value) || 0;
+            const description = document.getElementById('input-description').value.trim();
+
+            if (!name) {
+                showToast("Inserisci almeno il nome del prodotto prima di salvare.", true);
+                return;
+            }
+
+            // Combine user photos and generated photos
+            const allPhotos = [
+                ...loadedPhotos.map(p => p.dataUrl),
+                ...generatedAiPhotos
+            ];
+
+            const newItem = {
+                id: 'inv_' + Date.now(),
+                name,
+                color,
+                marketPrice,
+                listPrice,
+                discountPrice,
+                description,
+                photos: allPhotos,
+                createdAt: new Date().toLocaleDateString('it-IT')
+            };
+
+            inventory.unshift(newItem);
+            isSavedCurrent = true;
+            updateInventoryBadge();
+            showToast("Prodotto salvato con successo in inventario!");
+            switchTab('inventory');
+        }
+
+        // Render Inventory Grid
+        function renderInventory() {
+            const grid = document.getElementById('inventory-grid');
+            const emptyState = document.getElementById('inventory-empty-state');
+            const searchQuery = (document.getElementById('inventory-search')?.value || '').toLowerCase();
+
+            updateInventoryBadge();
+
+            const filtered = inventory.filter(item => 
+                item.name.toLowerCase().includes(searchQuery) ||
+                item.color.toLowerCase().includes(searchQuery) ||
+                item.description.toLowerCase().includes(searchQuery)
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.innerHTML = filtered.map(item => `
+                <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between transition-all hover:border-slate-600">
+                    <div class="p-4 space-y-3">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <h3 class="text-sm font-bold text-white line-clamp-1">${item.name}</h3>
+                                <p class="text-xs text-brand-400 font-medium">Colore: ${item.color || 'N/D'}</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500 bg-slate-800 px-2 py-0.5 rounded">${item.createdAt}</span>
+                        </div>
+
+                        <!-- Image Thumbnail Gallery -->
+                        <div class="flex gap-1.5 overflow-x-auto py-1">
+                            ${item.photos.length > 0 ? item.photos.map((img, idx) => `
+                                <a href="${img}" download="${item.name}_foto_${idx+1}.png" class="w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden border border-slate-700 bg-slate-950 block">
+                                    <img src="${img}" class="w-full h-full object-cover">
+                                </a>
+                            `).join('') : `
+                                <div class="text-xs text-slate-500 italic">Nessuna foto salvata</div>
+                            `}
+                        </div>
+
+                        <!-- Price display -->
+                        <div class="grid grid-cols-3 gap-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800 text-center">
+                            <div>
+                                <span class="text-[9px] text-slate-400 block">Mercato</span>
+                                <span class="text-xs font-semibold text-slate-300">€${item.marketPrice.toFixed(2)}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] text-brand-400 font-semibold block">Vendita</span>
+                                <span class="text-xs font-bold text-brand-400">€${item.listPrice.toFixed(2)}</span>
+                            </div>
+                            <div>
+                                <span class="text-[9px] text-amber-400 font-semibold block">Scontato</span>
+                                <span class="text-xs font-bold text-amber-400">€${item.discountPrice.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-300 line-clamp-3 leading-relaxed">${item.description}</p>
+                    </div>
+
+                    <div class="p-3 bg-slate-950/80 border-t border-slate-800 flex gap-2">
+                        <button onclick="openEditModal('${item.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center justify-center gap-1">
+                            <i data-lucide="edit" class="w-3.5 h-3.5"></i> Modifica
+                        </button>
+                        <button onclick="deleteInventoryItem('${item.id}')" class="p-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg transition-colors" title="Elimina">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Update inventory counter badge
+        function updateInventoryBadge() {
+            const badge = document.getElementById('inventory-count-badge');
+            if (badge) badge.textContent = inventory.length;
+        }
+
+        // Delete inventory item
+        function deleteInventoryItem(id) {
+            inventory = inventory.filter(item => item.id !== id);
+            renderInventory();
+            showToast("Prodotto eliminato dall'inventario");
+        }
+
+        // Modal Edit Functions
+        function openEditModal(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-item-id').value = item.id;
+            document.getElementById('edit-item-name').value = item.name;
+            document.getElementById('edit-item-color').value = item.color;
+            document.getElementById('edit-item-market-price').value = item.marketPrice;
+            document.getElementById('edit-item-list-price').value = item.listPrice;
+            document.getElementById('edit-item-discount-price').value = item.discountPrice;
+            document.getElementById('edit-item-description').value = item.description;
+
+            const photosContainer = document.getElementById('edit-item-photos');
+            photosContainer.innerHTML = item.photos.map((img, idx) => `
+                <a href="${img}" download="${item.name}_foto_${idx+1}.png" class="w-16 h-16 rounded-xl border border-slate-700 overflow-hidden relative group block">
+                    <img src="${img}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px]">Scarica</div>
+                </a>
+            `).join('');
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function saveEditModalChanges() {
+            const id = document.getElementById('edit-item-id').value;
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+
+            item.name = document.getElementById('edit-item-name').value.trim();
+            item.color = document.getElementById('edit-item-color').value.trim();
+            item.marketPrice = parseFloat(document.getElementById('edit-item-market-price').value) || 0;
+            item.listPrice = parseFloat(document.getElementById('edit-item-list-price').value) || 0;
+            item.discountPrice = parseFloat(document.getElementById('edit-item-discount-price').value) || 0;
+            item.description = document.getElementById('edit-item-description').value.trim();
+
+            renderInventory();
+            closeEditModal();
+            showToast("Modifiche salvate con successo!");
+        }
+    </script>
+</body>
+</html>
