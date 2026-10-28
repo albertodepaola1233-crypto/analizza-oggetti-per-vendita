@@ -79,7 +79,7 @@
                 <div class="flex items-center space-x-1.5 sm:space-x-3 flex-shrink-0">
                     <button onclick="toggleApiKeyModal()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-all flex items-center gap-1.5 text-xs font-semibold active:scale-95">
                         <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
-                        <span class="hidden md:inline">Chiavi API (Gemini / HF)</span>
+                        <span class="hidden md:inline">Chiavi API (Gemini)</span>
                     </button>
 
                     <nav class="flex space-x-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/50">
@@ -165,27 +165,27 @@
                         </div>
                     </div>
 
-                    <!-- Studio Photo Suite Generator (Infallible Hybrid Engine) -->
+                    <!-- Studio Photo Suite Generator -->
                     <div class="bg-slate-900/80 border border-purple-500/20 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm space-y-3.5">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                             <div class="min-w-0">
                                 <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 truncate">
                                     <i data-lucide="wand-2" class="w-4 h-4 text-purple-400 flex-shrink-0"></i>
-                                    Studio Set: 5 Foto Professionali
+                                    Studio Set: 5 Foto dall'Oggetto
                                 </h3>
-                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Generatore Set Fotografico E-commerce</p>
+                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Elaborazione fotografica dalle tue foto caricate</p>
                             </div>
-                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">Auto Suite</span>
+                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">Studio Render</span>
                         </div>
 
                         <p class="text-xs text-slate-300 leading-relaxed">
-                            Genera istantaneamente 5 scatti di catalogo ottimizzati per la vendita:
-                            <span class="block text-slate-400 text-[10px] sm:text-[11px] mt-1">1. Studio Neutro • 2. Dettaglio • 3. Lifestyle • 4. Angolazione 45° • 5. E-commerce Flat</span>
+                            Crea 5 scatti con inquadrature e luci da studio basati sulle foto che hai caricato:
+                            <span class="block text-slate-400 text-[10px] sm:text-[11px] mt-1">1. Studio Pulito • 2. Macro Dettaglio • 3. Inquadratura 45° • 4. Contrast Studio • 5. Flat Lay Set</span>
                         </p>
 
                         <button id="btn-generate-5-photos" onclick="generateFiveDiversePhotosWithHF()" disabled class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 active:scale-[0.98]">
                             <i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                            <span>2. Genera 5 Foto Professionali</span>
+                            <span>2. Genera 5 Foto dal Tuo Oggetto</span>
                         </button>
 
                         <div id="ai-generated-previews-container" class="hidden pt-3 border-t border-slate-800 space-y-2">
@@ -405,7 +405,7 @@
             </div>
             
             <p class="text-xs text-slate-300 leading-relaxed">
-                Inserisci la tua API Key Gemini (richiesta per l'analisi intelligente delle foto).
+                Inserisci la tua API Key Gemini per abilitare l'analisi del prodotto.
             </p>
 
             <div class="space-y-3">
@@ -1002,60 +1002,98 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
         }
 
         // =========================================================
-        // 2. STUDIO SUITE: Generazione 5 Foto E-commerce (Resiliente)
+        // 2. GENERATORE DI FOTO REALISTICO BASATO SULLE FOTO CARICATE
         // =========================================================
         async function generateFiveDiversePhotosWithHF() {
+            if (loadedPhotos.length === 0) {
+                showToast("Carica almeno 1 foto per generare le varianti studio.", true);
+                return;
+            }
+
             const btnGen = document.getElementById('btn-generate-5-photos');
             const previewsContainer = document.getElementById('ai-generated-previews');
             const containerBox = document.getElementById('ai-generated-previews-container');
             const generatedCountLabel = document.getElementById('generated-count');
 
             btnGen.disabled = true;
-            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Creazione set foto studio...</span>`;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Elaborazione 5 inquadrature...</span>`;
             
             containerBox.classList.remove('hidden');
             previewsContainer.innerHTML = Array(5).fill(0).map((_, i) => `
                 <div class="aspect-square bg-slate-950 border border-slate-800 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-500 text-[9px] animate-pulse">
                     <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
-                    <span>Scatto ${i+1}...</span>
+                    <span>Foto ${i+1}...</span>
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
 
             generatedAiPhotos = [];
 
-            // Generazione immediata di mockup fotografici professionali puliti per e-commerce tramite canvas ad alta definizione
-            const keywords = ['studio-lighting', 'luxury-product', 'minimal-interior', 'catalog-angle', 'ecommerce-display'];
-            
-            for (let i = 0; i < 5; i++) {
-                await new Promise(r => setTimeout(r, 600)); // simulazione shutter time fluido
+            // Carica la prima immagine utente in un elemento Image di HTML5
+            const sourceImg = new Image();
+            sourceImg.src = loadedPhotos[0].dataUrl;
+
+            await new Promise((resolve) => {
+                if (sourceImg.complete) resolve();
+                else sourceImg.onload = () => resolve();
+            });
+
+            // 5 configurazioni di render fotografico per studio e-commerce
+            const renderConfigs = [
+                { name: "Studio Pulito", scale: 0.85, offsetX: 0, offsetY: 0, filter: "brightness(1.05) contrast(1.08) saturate(1.05)", bg: "#f8fafc" },
+                { name: "Macro Dettaglio", scale: 1.5, offsetX: -30, offsetY: -20, filter: "contrast(1.15) saturate(1.1)", bg: "#f1f5f9" },
+                { name: "Vista 45°", scale: 0.9, offsetX: 20, offsetY: -10, filter: "brightness(1.02) contrast(1.05)", bg: "#e2e8f0" },
+                { name: "Contrast Studio", scale: 0.8, offsetX: 0, offsetY: 10, filter: "contrast(1.25) brightness(0.98)", bg: "#0f172a" },
+                { name: "Flat Lay Set", scale: 0.75, offsetX: 0, offsetY: 0, filter: "brightness(1.08) contrast(1.02)", bg: "#fafafa" }
+            ];
+
+            for (let i = 0; i < renderConfigs.length; i++) {
+                const cfg = renderConfigs[i];
                 const canvas = document.createElement('canvas');
-                canvas.width = 512;
-                canvas.height = 512;
+                canvas.width = 600;
+                canvas.height = 600;
                 const ctx = canvas.getContext('2d');
 
-                // Sfondo fotografico studio pulito con sfumatura elegante
-                const grad = ctx.createLinearGradient(0, 0, 512, 512);
-                grad.addColorStop(0, '#1e293b');
-                grad.addColorStop(1, '#0f172a');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, 512, 512);
+                // Sfondo dello studio
+                ctx.fillStyle = cfg.bg;
+                ctx.fillRect(0, 0, 600, 600);
 
-                // Dettaglio cornice e watermark di studio
-                ctx.strokeStyle = '#334155';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(16, 16, 480, 480);
+                // Ombra morbida da studio fotografico sotto l'oggetto
+                ctx.save();
+                ctx.beginPath();
+                ctx.ellipse(300 + cfg.offsetX, 450 + cfg.offsetY, 180 * cfg.scale, 35 * cfg.scale, 0, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+                ctx.filter = 'blur(12px)';
+                ctx.fill();
+                ctx.restore();
 
-                ctx.fillStyle = '#94a3b8';
-                ctx.font = 'bold 16px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`STUDIO SHOT 0${i+1}`, 256, 230);
+                // Disegno e trasformazione dell'immagine dell'oggetto caricato
+                ctx.save();
+                ctx.filter = cfg.filter;
 
-                ctx.font = '12px sans-serif';
-                ctx.fillStyle = '#64748b';
-                ctx.fillText(`Catalog Professional View`, 256, 260);
+                const aspect = sourceImg.width / sourceImg.height;
+                let drawW = 420 * cfg.scale;
+                let drawH = drawW / aspect;
 
-                generatedAiPhotos.push(canvas.toDataURL('image/jpeg', 0.9));
+                if (drawH > 420 * cfg.scale) {
+                    drawH = 420 * cfg.scale;
+                    drawW = drawH * aspect;
+                }
+
+                const drawX = (600 - drawW) / 2 + cfg.offsetX;
+                const drawY = (600 - drawH) / 2 + cfg.offsetY;
+
+                ctx.drawImage(sourceImg, drawX, drawY, drawW, drawH);
+                ctx.restore();
+
+                // Badge elegante stile studio nell'angolo
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+                ctx.fillRect(20, 20, 130, 26);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillText(cfg.name, 30, 37);
+
+                generatedAiPhotos.push(canvas.toDataURL('image/jpeg', 0.92));
             }
 
             generatedCountLabel.textContent = generatedAiPhotos.length;
@@ -1063,15 +1101,15 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
             previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
                 <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square shadow">
                     <img src="${imgUrl}" class="w-full h-full object-cover">
-                    <a href="${imgUrl}" download="studio_foto_${index+1}.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
+                    <a href="${imgUrl}" download="prodotto_studio_${index+1}.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
                         <i data-lucide="download" class="w-4 h-4"></i>
                     </a>
                 </div>
             `).join('');
 
-            showToast(`Set di 5 foto studio generate con successo!`);
+            showToast(`Generate ${generatedAiPhotos.length} foto studio dal tuo prodotto!`);
             btnGen.disabled = false;
-            btnGen.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>2. Genera 5 Foto Professionali</span>`;
+            btnGen.innerHTML = `<i data-lucide="layout-grid" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>2. Genera 5 Foto dal Tuo Oggetto</span>`;
             if (window.lucide) lucide.createIcons();
         }
     </script>
