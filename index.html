@@ -179,7 +179,7 @@
                         </div>
 
                         <p class="text-xs text-slate-300 leading-relaxed">
-                            Crea 5 angolazioni di catalogo tramite Hugging Face Router API:
+                            Crea 5 angolazioni di catalogo tramite Hugging Face Inference API:
                             <span class="block text-slate-400 text-[10px] sm:text-[11px] mt-1">1. Studio Pulito • 2. Dettaglio • 3. Lifestyle • 4. Vista 45° • 5. E-commerce Set</span>
                         </p>
 
@@ -419,7 +419,6 @@
                         </a>
                     </div>
                     <input type="password" id="custom-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
-                    <p class="text-[10px] text-slate-400">Incolla la tua chiave ottenuta da Google AI Studio.</p>
                 </div>
 
                 <div class="space-y-1">
@@ -432,7 +431,6 @@
                         </a>
                     </div>
                     <input type="password" id="custom-hf-token" placeholder="hf_..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-                    <p class="text-[10px] text-slate-400">Servono i permessi <b>"Make calls to Inference Providers"</b> o <b>"Inference: write"</b>.</p>
                 </div>
             </div>
 
@@ -448,7 +446,7 @@
         let generatedAiPhotos = [];
         let inventory = [];
 
-        // Modelli con Fallback per Hugging Face Router
+        // Modelli principali per Hugging Face Text-to-Image
         const HF_MODELS = [
             "black-forest-labs/FLUX.1-schnell",
             "stabilityai/stable-diffusion-xl-base-1.0",
@@ -879,7 +877,7 @@
         }
 
         // =========================================================
-        // 1. GEMINI 3 FLASH API: Analisi Multimodale Con Fallback
+        // 1. GEMINI 3 FLASH API: Analisi Multimodale
         // =========================================================
         async function analyzeProductWithGemini() {
             const sizeValue = document.getElementById('input-size').value.trim();
@@ -954,7 +952,6 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
     "descrizione_fluida": "Descrizione d'impatto, persuasiva e completa che cita la taglia ${sizeValue}"
 }`;
 
-                // Lista dei nomi di modello per la compatibilità retroattiva e attuale
                 const geminiModels = [
                     "gemini-3-flash-preview",
                     "gemini-3-flash",
@@ -991,7 +988,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 }
 
                 if (!response) {
-                    throw new Error(`Impossibile contattare l'API Gemini: ${lastError}`);
+                    throw new Error(`Impossibile contattare Gemini API: ${lastError}`);
                 }
 
                 const result = await response.json();
@@ -1001,7 +998,6 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
 
                 const parsed = extractJson(responseText);
 
-                // Populate Form
                 document.getElementById('input-name').value = parsed.nome_prodotto || '';
                 document.getElementById('input-color').value = parsed.colore_esatto || '';
                 document.getElementById('input-market-price').value = parsed.prezzo_media_mercato || 0;
@@ -1016,7 +1012,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 if (parsed.oggetto_gia_in_inventario) {
                     demandBadge.textContent = "Gia' in Inventario";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0";
-                    showToast("Articolo già trovato in inventario!");
+                    showToast("Articolo trovato in inventario!");
                 } else {
                     demandBadge.textContent = "Analisi Gemini Completata";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex-shrink-0";
@@ -1044,16 +1040,14 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
         }
 
         // =========================================================
-        // 2. HUGGING FACE ROUTER API: Generazione Immagini
+        // 2. HUGGING FACE INFERENCE API: Correzione e Binary Blob Reader
         // =========================================================
         async function fetchHuggingFaceImage(promptText, token) {
             let lastErrorMessage = "";
 
-            // Endpoints con supporto alle nuove chiavi e router Hugging Face
             const endpoints = [
-                model => `https://router.huggingface.co/hf-inference/v1/models/${model}`,
-                model => `https://router.huggingface.co/models/${model}`,
-                model => `https://api-inference.huggingface.co/models/${model}`
+                model => `https://api-inference.huggingface.co/models/${model}`,
+                model => `https://router.huggingface.co/hf-inference/v1/models/${model}`
             ];
 
             for (const model of HF_MODELS) {
@@ -1066,41 +1060,45 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({
-                                inputs: promptText,
-                                parameters: { width: 512, height: 512 }
-                            })
+                            body: JSON.stringify({ inputs: promptText })
                         });
 
                         if (response.status === 503) {
-                            await new Promise(r => setTimeout(r, 3000));
+                            // Modello in caricamento (Cold Start)
+                            await new Promise(r => setTimeout(r, 4000));
                             continue;
                         }
 
                         if (response.status === 401 || response.status === 403) {
-                            const errJson = await response.json().catch(() => ({}));
-                            lastErrorMessage = errJson.error || `Permessi non validi per il Token HF (Status ${response.status})`;
+                            lastErrorMessage = `Errore di permessi Token HF (HTTP ${response.status})`;
                             hfPermissionErrorOccurred = true;
                             break;
                         }
 
                         if (response.ok) {
-                            const blob = await response.blob();
-                            return await blobToBase64(blob);
+                            const contentType = response.headers.get("content-type");
+                            // Verifica se la risposta è un'immagine
+                            if (contentType && (contentType.includes("image") || contentType.includes("octet-stream"))) {
+                                const blob = await response.blob();
+                                return await blobToBase64(blob);
+                            } else {
+                                const json = await response.json().catch(() => ({}));
+                                console.warn("Risposta non-immagine da HF:", json);
+                            }
                         } else {
                             const errText = await response.text().catch(() => '');
                             console.warn(`HF Error (${model}): ${errText}`);
-                            lastErrorMessage = `Errore ${response.status} su modello ${model}`;
+                            lastErrorMessage = `Errore ${response.status} su ${model}`;
                         }
                     } catch (err) {
-                        console.error(`Errore connessione HF:`, err);
+                        console.error(`Errore rete HF:`, err);
                     }
                 }
                 if (hfPermissionErrorOccurred) break;
             }
 
             if (lastErrorMessage) {
-                console.error("HF Final Error:", lastErrorMessage);
+                console.error("HF Failure:", lastErrorMessage);
             }
             return null;
         }
@@ -1158,14 +1156,14 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
             if (hfPermissionErrorOccurred) {
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 p-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-1">
-                        <p class="font-bold">Errore di Permesso Token (401/403)</p>
-                        <p class="text-[11px] text-slate-300">Assicurati che il token su Hugging Face abbia attiva la spunta <b>"Make calls to Inference Providers"</b> o <b>"Inference: write"</b>.</p>
+                        <p class="font-bold">Errore di Permesso Token HF (401/403)</p>
+                        <p class="text-[11px] text-slate-300">Verifica che il token su Hugging Face sia attivo e impostato su <b>Fine-Grained (Inference: write)</b> o <b>Read</b>.</p>
                     </div>`;
                 showToast("Errore Token HF: controlla i permessi su Hugging Face", true);
             } else if (generatedAiPhotos.length === 0) {
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl">
-                        Impossibile generare foto.<br>Verifica il token e riprova.
+                        Impossibile generare foto.<br>Verifica il token HF e riprova.
                     </div>`;
                 showToast("Generazione immagini Hugging Face non riuscita.", true);
             } else {
