@@ -419,7 +419,7 @@
             </div>
             
             <p class="text-xs text-slate-300 leading-relaxed">
-                Fornisci le due chiavi API per abilitare l'analisi del testo e la generazione delle foto.
+                Inserisci o incolla le chiavi API per abilitare l'analisi Gemini 3 Flash e la generazione delle immagini con Hugging Face.
             </p>
 
             <div class="space-y-3">
@@ -433,7 +433,7 @@
                             Ottieni gratis <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
                         </a>
                     </div>
-                    <input type="password" id="custom-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                    <input type="password" id="custom-gemini-key" placeholder="Incolla chiave Gemini..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
                     <p class="text-[10px] text-slate-400">Usata per l'analisi multimodale ed il testo con <b>Gemini 3 Flash</b>.</p>
                 </div>
 
@@ -448,7 +448,7 @@
                         </a>
                     </div>
                     <input type="password" id="custom-hf-token" placeholder="hf_..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-                    <p class="text-[10px] text-slate-400">Accetta token Fine-Grained con permesso <b>Inference: write</b> o <b>Make calls to the serverless Inference API</b>.</p>
+                    <p class="text-[10px] text-slate-400">Richiede token con permesso <b>Inference: write</b> attivo.</p>
                 </div>
             </div>
 
@@ -473,11 +473,10 @@
         ];
         let hfPermissionErrorOccurred = false;
 
-        // Retrieve API Keys safely from localStorage or environment
+        // Retrieve API Keys safely from localStorage
         function getGeminiApiKey() {
             const savedKey = localStorage.getItem('GEMINI_API_KEY');
             if (savedKey && savedKey.trim() !== '') return savedKey.trim();
-            if (typeof window.apiKey !== 'undefined' && window.apiKey) return window.apiKey;
             return '';
         }
 
@@ -911,7 +910,7 @@
         }
 
         // =========================================================
-        // 1. GEMINI API: Analisi Multimodale + Generazione Scheda (Gemini 3 Flash)
+        // 1. GEMINI 3 FLASH API: Analisi Multimodale
         // =========================================================
         async function analyzeProductWithGemini() {
             const sizeValue = document.getElementById('input-size').value.trim();
@@ -937,7 +936,7 @@
             const badge = document.getElementById('analysis-status-badge');
             
             btnAnalyze.disabled = true;
-            btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Gemini analizza...</span>`;
+            btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Gemini 3 Flash analizza...</span>`;
             badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full font-medium flex items-center gap-1.5 border border-amber-500/30';
             badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Analisi foto in corso`;
             if (window.lucide) lucide.createIcons();
@@ -986,7 +985,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
     "descrizione_fluida": "Descrizione d'impatto, persuasiva e completa che cita la taglia ${sizeValue}"
 }`;
 
-                // Endpoint aggiornato per Gemini 3 Flash
+                // Endpoint Gemini 3 Flash
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${apiKey}`;
 
                 const payload = {
@@ -1009,7 +1008,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 const result = await response.json();
                 const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (!responseText) throw new Error("Risposta vuota ricevuta da Gemini.");
+                if (!responseText) throw new Error("Risposta vuota ricevuta da Gemini 3 Flash.");
 
                 const parsed = extractJson(responseText);
 
@@ -1042,13 +1041,13 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 updateButtonStates();
 
                 badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-brand-500/20 text-brand-300 rounded-full font-medium flex items-center gap-1.5 border border-brand-500/30';
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Analizzato da Gemini 3`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Analizzato da Gemini 3 Flash`;
 
             } catch (error) {
                 console.error("Errore Gemini API:", error);
                 showToast("Errore Gemini API: " + error.message, true);
                 badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-full font-medium flex items-center gap-1.5 border border-rose-500/30';
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Errore Gemini`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Errore Gemini 3`;
             } finally {
                 btnAnalyze.disabled = false;
                 btnAnalyze.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>1. Analizza con Gemini 3 Flash & Mercato</span>`;
@@ -1165,9 +1164,9 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 p-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-1">
                         <p class="font-bold">Errore di Permesso (401/403)</p>
-                        <p class="text-[11px] text-slate-300">Il token Hugging Face (Fine-Grained) richiede il permesso <b>"Inference: write"</b> o <b>"Make calls to the serverless Inference API"</b>.</p>
+                        <p class="text-[11px] text-slate-300">Il token Hugging Face richiede il permesso <b>"Inference: write"</b>.</p>
                     </div>`;
-                showToast("Errore Permessi Token HF: abilita il permesso 'Inference: write'", true);
+                showToast("Errore Permessi Token HF: verifica i permessi di scrittura", true);
             } else if (generatedAiPhotos.length === 0) {
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl">
