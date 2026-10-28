@@ -871,7 +871,7 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
             }
         }
 
-        // STEP 2: Generate 5 Unique AI Photos using Pollinations.ai API (Free, Instant & Keyless)
+        // STEP 2: Generate 5 Unique AI Photos using High-Fidelity Photorealistic AI Engine
         async function generateFiveDiversePhotos() {
             if (loadedPhotos.length === 0) return;
 
@@ -880,11 +880,11 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
             const containerBox = document.getElementById('ai-generated-previews-container');
             const generatedCountLabel = document.getElementById('generated-count');
 
-            const productName = document.getElementById('input-name').value.trim() || 'product';
+            const productName = document.getElementById('input-name').value.trim() || 'fashion clothing product item';
             const colorName = document.getElementById('input-color').value.trim() || '';
 
             btnGen.disabled = true;
-            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Generazione foto IA in corso...</span>`;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Generazione foto HD in corso...</span>`;
             
             containerBox.classList.remove('hidden');
             previewsContainer.innerHTML = Array(5).fill(0).map((_, i) => `
@@ -897,17 +897,19 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
 
             generatedAiPhotos = [];
 
+            // Photorealistic prompt templates tuned for high quality commercial look
             const stylePrompts = [
-                `Professional photo of ${colorName} ${productName}, studio light, plain neutral background, photorealistic 8k catalog`,
-                `Close-up texture macro detail shot of ${colorName} ${productName}, fabric texture, high resolution`,
-                `Lifestyle fashion portrait featuring ${colorName} ${productName}, luxury aesthetic, soft ambient lighting`,
-                `E-commerce product presentation of ${colorName} ${productName}, clean 45 degree angle view`,
-                `Minimalist luxury display podium with ${colorName} ${productName}`
+                `Clean studio photograph of ${colorName} ${productName}, isolated on soft off-white background, professional e-commerce product lighting, 8k resolution, crisp detail`,
+                `Close-up macro detail shot showing texture and material of ${colorName} ${productName}, premium quality fashion photography, high definition`,
+                `Fashion lifestyle presentation of ${colorName} ${productName}, elegant boutique interior setting, natural soft window lighting, cinematic depth of field`,
+                `Symmetrical commercial catalog shot of ${colorName} ${productName}, front angle view, high key studio lighting, professional retail display`,
+                `Minimalist luxury exhibit display of ${colorName} ${productName} on modern pedestal, elegant neutral aesthetic, soft shadows`
             ];
 
-            // Helper to fetch image as dataUrl to prevent CORS/broken links
+            // Helper to fetch image directly and convert to base64 dataUrl
             const fetchAsBase64 = async (url) => {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error("HTTP error " + response.status);
                 const blob = await response.blob();
                 return new Promise((resolve) => {
                     const reader = new FileReader();
@@ -918,9 +920,10 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
 
             for (let i = 0; i < stylePrompts.length; i++) {
                 try {
-                    const seed = Math.floor(Math.random() * 999999);
-                    const promptEncoded = encodeURIComponent(stylePrompts[i]);
-                    const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=768&height=768&seed=${seed}&nologo=true&enhance=true`;
+                    const seed = Math.floor(Math.random() * 99999) + 1;
+                    const cleanPrompt = encodeURIComponent(stylePrompts[i]);
+                    // Enhanced Flux/Pollinations engine with Flux model parameters for ultra-realistic photos
+                    const imageUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?model=flux&width=800&height=800&seed=${seed}&nologo=true&enhance=true`;
 
                     const base64Img = await fetchAsBase64(imageUrl);
                     if (base64Img) {
@@ -940,12 +943,12 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
                 previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
                     <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square shadow">
                         <img src="${imgUrl}" class="w-full h-full object-cover">
-                        <a href="${imgUrl}" download="prodotto_foto_${index+1}.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
+                        <a href="${imgUrl}" download="${productName}_foto_${index+1}.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
                             <i data-lucide="download" class="w-4 h-4"></i>
                         </a>
                     </div>
                 `).join('');
-                showToast(`Generate ${generatedAiPhotos.length} foto con successo!`);
+                showToast(`Generate ${generatedAiPhotos.length} foto in qualità HD!`);
             }
 
             btnGen.disabled = false;
