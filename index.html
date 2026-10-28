@@ -126,9 +126,18 @@
                             </div>
                             <div>
                                 <p class="text-xs sm:text-sm font-medium text-slate-200">Scatta o Carica foto <span class="text-brand-500 underline font-semibold">Sfoglia</span></p>
-                                <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">Carica fino a 3 foto chiare dell'oggetto</p>
+                                <p class="text-[10px] sm:text-xs text-slate-400 mt-0.5">Carica da 1 a 3 foto chiare dell'oggetto</p>
                             </div>
                             <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+                        </div>
+
+                        <!-- Manual Input: Size / Dimensions (Mandatory for AI) -->
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5">
+                            <label class="text-xs font-semibold text-amber-400 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5"><i data-lucide="ruler" class="w-4 h-4 text-amber-400"></i> Taglia / Dimensione (Obbligatoria)</span>
+                                <span class="text-[10px] text-slate-400 font-normal">Richiesta per l'analisi</span>
+                            </label>
+                            <input type="text" id="input-size" oninput="updateButtonStates()" placeholder="Es. M, L, 42, 38x28cm, Unica..." class="w-full bg-slate-950/90 border border-slate-700 focus:border-brand-500 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition-colors">
                         </div>
 
                         <!-- Image Previews Container -->
@@ -209,7 +218,7 @@
 
                         <!-- Form Inputs -->
                         <div class="space-y-4">
-                            <!-- Title & Color -->
+                            <!-- Title, Size & Color -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                                 <div class="sm:col-span-2 space-y-1">
                                     <label class="text-xs font-medium text-slate-300 flex justify-between">
@@ -461,6 +470,7 @@
             if (window.lucide) lucide.createIcons();
             loadInventoryFromLocalStorage();
             renderInventory();
+            updateButtonStates();
         });
 
         // Tab Switching Logic
@@ -580,8 +590,12 @@
         }
 
         function updateButtonStates() {
-            const hasPhotos = loadedPhotos.length > 0;
-            document.getElementById('btn-analyze').disabled = !hasPhotos;
+            const hasPhotos = loadedPhotos.length >= 1; // Almeno 1 foto su 3
+            const sizeInput = document.getElementById('input-size');
+            const hasSize = sizeInput && sizeInput.value.trim().length > 0;
+
+            const canAnalyze = hasPhotos && hasSize;
+            document.getElementById('btn-analyze').disabled = !canAnalyze;
             document.getElementById('btn-generate-5-photos').disabled = !hasPhotos;
         }
 
@@ -623,7 +637,7 @@
 
             if (marketPrice > 0) {
                 const listPrice = marketPrice * (1 + (selectedMarkup / 100));
-                const discountPrice = marketPrice * 0.95; // 5% below market for quick sale
+                const discountPrice = marketPrice * 0.95;
 
                 listInput.value = listPrice.toFixed(2);
                 discountInput.value = discountPrice.toFixed(2);
@@ -632,7 +646,17 @@
 
         // STEP 1: Analyze Product using Gemini
         async function analyzeProductWithAI() {
-            if (loadedPhotos.length === 0) return;
+            const sizeValue = document.getElementById('input-size').value.trim();
+
+            if (loadedPhotos.length === 0) {
+                showToast("Carica almeno 1 foto per analizzare.", true);
+                return;
+            }
+
+            if (!sizeValue) {
+                showToast("Inserisci prima la taglia o dimensione dell'oggetto.", true);
+                return;
+            }
 
             const apiKey = getApiKey();
             if (!apiKey) {
@@ -661,36 +685,44 @@
                     id: item.id,
                     name: item.name,
                     color: item.color,
+                    size: item.size,
                     marketPrice: item.marketPrice,
                     createdAt: item.createdAt,
                     timestamp: item.timestamp || Date.now()
                 }));
 
                 const userPrompt = `Sei un esperto stimatore di prodotti e gestore di inventario e-commerce.
+
+INFORMAZIONI DI INGRESSO FONDAMENTALI FORNITE DALL'UTENTE:
+- TAGLIA / DIMENSIONE MANUALE FORNITA: "${sizeValue}"
+
 INVENTARIO ESISTENTE NEL SISTEMA (JSON):
 ${JSON.stringify(existingItemsSummary)}
 
 REGOLE TASSATIVE DI VALUTAZIONE E LOGICA DI PREZZO:
 1. CONTROLLO PREVENTIVO INVENTARIO:
-   - Verifica prima di tutto se l'oggetto ritratto nelle foto inviate è GIÀ PRESENTE nell'inventario esistente indicato sopra.
-   - Se è già presente, NON CAMBIARE IL PREZZO A MENO CHE NON SIA PASSATO MOLTO TEMPO o che non vi siano evidenti variazioni reali di mercato. Mantiere rigorosamente il prezzo fisso precedentemente stabilito.
+   - Verifica prima di tutto se l'oggetto ritratto nelle foto inviate (e con taglia "${sizeValue}") è GIÀ PRESENTE nell'inventario esistente indicato sopra.
+   - Se è già presente, NON CAMBIARE IL PREZZO A MENO CHE NON SIA PASSATO MOLTO TEMPO o che non vi siano evidenti variazioni reali di mercato.
    - Nel campo "oggetto_gia_in_inventario" rispondi true o false.
    - Nel campo "variazione_prezzo_motivo" indica se l'oggetto era già registrato, se il prezzo è rimasto identico (confermato) o se è cambiato spiegando esattamente il motivo.
 
 2. SE L'OGGETTO È NUOVO (Non presente in inventario):
-   - Fai una ricerca/ricostruzione di mercato precisa e accurata e stabilisci UN UNICO PREZZO DI MERCATO definitivo e stabile per l'oggetto.
+   - Fai una ricerca/ricostruzione di mercato precisa e accurata e stabilisci UN UNICO PREZZO DI MERCATO definitivo e stabile per l'oggetto della taglia "${sizeValue}".
    - Rispondi con "oggetto_gia_in_inventario": false.
+
+3. SCHEDA PRODOTTO:
+   - Nella descrizione liquida e persuasive includi ed evidenzia in modo naturale la taglia/misura "${sizeValue}".
 
 Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
 {
     "oggetto_gia_in_inventario": false,
     "id_inventario_trovato": null,
-    "nome_prodotto": "Nome preciso dell'oggetto",
-    "colore_esatto": "Colore esatto",
+    "nome_prodotto": "Nome preciso dell'oggetto (incl. eventuale marca/modello)",
+    "colore_esatto": "Colore esatto visibile",
     "prezzo_media_mercato": 45.00,
     "livello_domanda": "Alta / Media / Nicchia",
     "variazione_prezzo_motivo": "Spiegazione se è già in inventario, conferma prezzo o motivazione dell'eventuale variazione nel tempo",
-    "descrizione_fluida": "Descrizione d'impatto, completa e persuasiva per la vendita"
+    "descrizione_fluida": "Descrizione d'impatto, completa e persuasiva per la vendita che include la taglia ${sizeValue}"
 }`;
 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -733,7 +765,7 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
                 } else {
                     demandBadge.textContent = "Nuova Analisi Mercato";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex-shrink-0";
-                    showToast("Nuovo articolo analizzato con prezzo stimato fisso!");
+                    showToast("Nuovo articolo analizzato con successo!");
                 }
 
                 marketReasoning.textContent = parsed.variazione_prezzo_motivo || "Prezzo fisso calcolato sulla media reale di mercato.";
@@ -789,43 +821,41 @@ Fornisci la risposta ESCLUSIVAMENTE in formato JSON con questa struttura:
             const mimeType = loadedPhotos[0].dataUrl.substring(loadedPhotos[0].dataUrl.indexOf(':') + 1, loadedPhotos[0].dataUrl.indexOf(';'));
 
             const stylePrompts = [
-                "Scatto di studio fotografico professionale pulito con sfondo neutro chiaro, illuminazione morbida.",
-                "Inquadratura ravvicinata di dettaglio (close-up) della texture, materiale e dettagli unici dell'oggetto.",
-                "Inquadratura in contesto d'uso/ambientato realistico mantenendo l'oggetto identico.",
-                "Vista angolata/prospettica da un'angolazione diversa dell'oggetto intero.",
-                "Contesto lifestyle premium elegante da catalogo di vendita di alta gamma."
+                "Scatto da studio fotografico professionale pulito con sfondo neutro chiaro, illuminazione morbida e ombre naturali.",
+                "Inquadratura ravvicinata di dettaglio (close-up) per evidenziare texture, cuciture e materiale dell'oggetto.",
+                "Foto ambientata in contesto d'uso/lifestyle elegante con profondità di campo sfocata.",
+                "Inquadratura angolata a 45 gradi dell'oggetto intero con illuminazione da catalogo.",
+                "Set fotografico da e-commerce di fascia alta con sfondo stilizzato armonioso."
             ];
 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+            // Endpoint Gemini per la generazione di immagini
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generate?key=${apiKey}`;
 
             for (let i = 0; i < stylePrompts.length; i++) {
                 try {
-                    const promptText = `ATTENZIONE REGOLA FERREA: MANTIENI L'OGGETTO, I DETTAGLI, IL MATERIALE E IL COLORE RIGOROSAMENTE ED ESATTAMENTE IDENTICI E INALTERATI RISPETTO ALL'IMMAGINE FORNITA. NESSUNA VARIAZIONE DI COLORE O FORMA.
-Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
+                    const promptText = `Crea un'immagine ad alta risoluzione del seguente prodotto: ${stylePrompts[i]}. Sfondo coerente ed elegante.`;
 
                     const payload = {
-                        contents: [{
-                            role: "user",
-                            parts: [
-                                { text: promptText },
-                                { inlineData: { mimeType: mimeType, data: base64Data } }
-                            ]
-                        }],
-                        generationConfig: { responseModalities: ['IMAGE'] }
+                        prompt: promptText,
+                        config: {
+                            numberOfImages: 1,
+                            outputMimeType: "image/jpeg",
+                            aspectRatio: "1:1"
+                        }
                     };
 
-                    const response = await fetchWithRetry(apiUrl, {
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
 
-                    const result = await response.json();
-                    const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-
-                    if (part && part.inlineData) {
-                        const imgUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                        generatedAiPhotos.push(imgUrl);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const generatedImg = result.generatedImages?.[0]?.image?.imageBytes;
+                        if (generatedImg) {
+                            generatedAiPhotos.push(`data:image/jpeg;base64,${generatedImg}`);
+                        }
                     }
                 } catch (e) {
                     console.error("Errore generazione foto " + (i+1), e);
@@ -835,12 +865,13 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
             generatedCountLabel.textContent = generatedAiPhotos.length;
 
             if (generatedAiPhotos.length === 0) {
-                previewsContainer.innerHTML = `<div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3">Impossibile generare foto al momento. Riprova.</div>`;
+                previewsContainer.innerHTML = `<div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium">Impossibile generare foto con le impostazioni correnti. Verifica la tua Chiave API Gemini.</div>`;
+                showToast("Generazione immagini fallita. Verifica la tua API Key.", true);
             } else {
                 previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
                     <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square shadow">
                         <img src="${imgUrl}" class="w-full h-full object-cover">
-                        <a href="${imgUrl}" download="prodotto_foto_${index+1}.png" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
+                        <a href="${imgUrl}" download="prodotto_foto_${index+1}.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" title="Scarica Foto">
                             <i data-lucide="download" class="w-4 h-4"></i>
                         </a>
                     </div>
@@ -872,6 +903,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
             isSavedCurrent = false;
 
             document.getElementById('file-input').value = '';
+            document.getElementById('input-size').value = '';
             document.getElementById('input-name').value = '';
             document.getElementById('input-color').value = '';
             document.getElementById('input-market-price').value = '';
@@ -894,6 +926,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
         function saveToInventory() {
             const name = document.getElementById('input-name').value.trim();
             const color = document.getElementById('input-color').value.trim();
+            const size = document.getElementById('input-size').value.trim();
             const marketPrice = parseFloat(document.getElementById('input-market-price').value) || 0;
             const listPrice = parseFloat(document.getElementById('input-list-price').value) || 0;
             const discountPrice = parseFloat(document.getElementById('input-discount-price').value) || 0;
@@ -913,6 +946,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
                 id: 'inv_' + Date.now(),
                 name,
                 color,
+                size,
                 marketPrice,
                 listPrice,
                 discountPrice,
@@ -961,7 +995,8 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
 
             const filtered = inventory.filter(item => 
                 item.name.toLowerCase().includes(searchQuery) ||
-                item.color.toLowerCase().includes(searchQuery) ||
+                (item.color && item.color.toLowerCase().includes(searchQuery)) ||
+                (item.size && item.size.toLowerCase().includes(searchQuery)) ||
                 item.description.toLowerCase().includes(searchQuery)
             );
 
@@ -978,7 +1013,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
                         <div class="flex justify-between items-start gap-2">
                             <div class="min-w-0">
                                 <h3 class="text-xs sm:text-sm font-bold text-white line-clamp-1">${item.name}</h3>
-                                <p class="text-[11px] text-brand-400 font-medium truncate">Colore: ${item.color || 'N/D'}</p>
+                                <p class="text-[11px] text-brand-400 font-medium truncate">Colore: ${item.color || 'N/D'} • Taglia: ${item.size || 'N/D'}</p>
                             </div>
                             <span class="text-[9px] text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 flex-shrink-0">${item.createdAt}</span>
                         </div>
@@ -986,7 +1021,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
                         <!-- Image Thumbnail Gallery -->
                         <div class="flex gap-1.5 overflow-x-auto py-1">
                             ${item.photos && item.photos.length > 0 ? item.photos.map((img, idx) => `
-                                <a href="${img}" download="${item.name}_foto_${idx+1}.png" class="w-11 h-11 flex-shrink-0 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 block">
+                                <a href="${img}" download="${item.name}_foto_${idx+1}.jpg" class="w-11 h-11 flex-shrink-0 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 block">
                                     <img src="${img}" class="w-full h-full object-cover">
                                 </a>
                             `).join('') : `
@@ -1054,7 +1089,7 @@ Genera una nuova foto del medesimo oggetto con stile: ${stylePrompts[i]}`;
 
             const photosContainer = document.getElementById('edit-item-photos');
             photosContainer.innerHTML = (item.photos || []).map((img, idx) => `
-                <a href="${img}" download="${item.name}_foto_${idx+1}.png" class="w-14 h-14 rounded-lg border border-slate-800 overflow-hidden relative group block">
+                <a href="${img}" download="${item.name}_foto_${idx+1}.jpg" class="w-14 h-14 rounded-lg border border-slate-800 overflow-hidden relative group block">
                     <img src="${img}" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[9px]">Scarica</div>
                 </a>
