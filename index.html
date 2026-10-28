@@ -131,7 +131,7 @@
                             <input type="file" id="file-input" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
                         </div>
 
-                        <!-- Manual Input: Size / Dimensions (Mandatory for AI) -->
+                        <!-- Manual Input: Size / Dimensions -->
                         <div class="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5">
                             <label class="text-xs font-semibold text-amber-400 flex items-center justify-between">
                                 <span class="flex items-center gap-1.5"><i data-lucide="ruler" class="w-4 h-4 text-amber-400"></i> Taglia / Dimensione (Obbligatoria)</span>
@@ -165,7 +165,7 @@
                         </div>
                     </div>
 
-                    <!-- Hugging Face Photo Suite Generator (5 Diverse Shots) -->
+                    <!-- Hugging Face Photo Suite Generator -->
                     <div class="bg-slate-900/80 border border-purple-500/20 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-sm space-y-3.5">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                             <div class="min-w-0">
@@ -173,14 +173,14 @@
                                     <i data-lucide="wand-2" class="w-4 h-4 text-purple-400 flex-shrink-0"></i>
                                     Hugging Face API: Set 5 Foto
                                 </h3>
-                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Genera foto con modelli FLUX/SDXL</p>
+                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Genera foto con FLUX/SDXL Router API</p>
                             </div>
-                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">HF FLUX/SDXL</span>
+                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">HF Inference</span>
                         </div>
 
                         <p class="text-xs text-slate-300 leading-relaxed">
-                            Crea 5 angolazioni di catalogo tramite Hugging Face Inference API:
-                            <span class="block text-slate-400 text-[10px] sm:text-[11px] mt-1">1. Studio Pulito • 2. Dettaglio/Texture • 3. Lifestyle In-Uso • 4. Vista 45° • 5. E-commerce Set</span>
+                            Crea 5 angolazioni di catalogo tramite Hugging Face Router API:
+                            <span class="block text-slate-400 text-[10px] sm:text-[11px] mt-1">1. Studio Pulito • 2. Dettaglio • 3. Lifestyle • 4. Vista 45° • 5. E-commerce Set</span>
                         </p>
 
                         <button id="btn-generate-5-photos" onclick="generateFiveDiversePhotosWithHF()" disabled class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 active:scale-[0.98]">
@@ -188,14 +188,11 @@
                             <span>2. Genera 5 Foto con Hugging Face</span>
                         </button>
 
-                        <!-- Generated 5 Photos Grid Preview -->
                         <div id="ai-generated-previews-container" class="hidden pt-3 border-t border-slate-800 space-y-2">
                             <div class="flex justify-between items-center">
-                                <span class="text-xs font-semibold text-purple-300">Foto Hugging Face (<span id="generated-count">0</span>/5)</span>
+                                <span class="text-xs font-semibold text-purple-300">Foto Generati (<span id="generated-count">0</span>/5)</span>
                             </div>
-                            <div id="ai-generated-previews" class="grid grid-cols-3 xs:grid-cols-5 gap-2">
-                                <!-- Injected dynamically -->
-                            </div>
+                            <div id="ai-generated-previews" class="grid grid-cols-3 xs:grid-cols-5 gap-2"></div>
                         </div>
                     </div>
 
@@ -205,7 +202,6 @@
                 <div class="lg:col-span-7">
                     <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl backdrop-blur-sm space-y-4 sm:space-y-5">
                         
-                        <!-- Header Status -->
                         <div class="flex items-center justify-between border-b border-slate-800 pb-3 gap-2">
                             <h2 class="text-sm sm:text-base font-semibold text-white flex items-center gap-2 truncate">
                                 <i data-lucide="file-edit" class="w-4 h-4 sm:w-5 sm:h-5 text-brand-500 flex-shrink-0"></i>
@@ -216,9 +212,7 @@
                             </span>
                         </div>
 
-                        <!-- Form Inputs -->
                         <div class="space-y-4">
-                            <!-- Title & Color -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                                 <div class="sm:col-span-2 space-y-1">
                                     <label class="text-xs font-medium text-slate-300 flex justify-between">
@@ -236,7 +230,6 @@
                                 </div>
                             </div>
 
-                            <!-- Pricing Matrix & Market Analysis -->
                             <div class="p-3.5 sm:p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-3">
                                 <div class="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2">
                                     <label class="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-1.5">
@@ -270,7 +263,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Demand & Market Insight Box -->
                                 <div id="market-insights-box" class="hidden p-3 bg-slate-900/90 border border-slate-800 rounded-xl space-y-1.5 text-xs">
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="font-semibold text-slate-200 flex items-center gap-1.5 text-[11px]">
@@ -285,17 +277,15 @@
                                 </div>
                             </div>
 
-                            <!-- Fluid Description -->
                             <div class="space-y-1">
                                 <div class="flex justify-between items-center">
                                     <label class="text-xs font-medium text-slate-300">Descrizione Completa & Fluida (Gemini AI)</label>
                                     <button onclick="copyToClipboard('input-description')" class="text-brand-500 hover:text-brand-400 text-[11px] flex items-center gap-0.5"><i data-lucide="copy" class="w-3 h-3"></i> Copia</button>
                                 </div>
-                                <textarea id="input-description" rows="5" placeholder="Descrizione dettagliata e persuasiva generata da Gemini pronta per e-commerce..." class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-slate-200 leading-relaxed focus:outline-none focus:border-brand-500 transition-colors"></textarea>
+                                <textarea id="input-description" rows="5" placeholder="Descrizione dettagliata e persuasiva generata da Gemini..." class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-slate-200 leading-relaxed focus:outline-none focus:border-brand-500 transition-colors"></textarea>
                             </div>
                         </div>
 
-                        <!-- Save to Inventory Action -->
                         <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row gap-2.5">
                             <button onclick="resetCurrentProductForm()" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 active:scale-95">
                                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Form
@@ -329,12 +319,8 @@
                     </div>
                 </div>
 
-                <!-- Responsive Inventory Grid -->
-                <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    <!-- Injected dynamically -->
-                </div>
+                <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"></div>
 
-                <!-- Empty State -->
                 <div id="inventory-empty-state" class="text-center py-12 space-y-3">
                     <div class="p-4 bg-slate-950/80 w-14 h-14 rounded-full mx-auto flex items-center justify-center border border-slate-800 text-slate-500">
                         <i data-lucide="package-x" class="w-7 h-7"></i>
@@ -406,7 +392,7 @@
         </div>
     </div>
 
-    <!-- API KEYS MODAL (SEPARATED GEMINI & HUGGING FACE) -->
+    <!-- API KEYS MODAL -->
     <div id="api-key-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -419,11 +405,10 @@
             </div>
             
             <p class="text-xs text-slate-300 leading-relaxed">
-                Inserisci o incolla le chiavi API per abilitare l'analisi Gemini 3 Flash e la generazione delle immagini con Hugging Face.
+                Inserisci la tua API Key Gemini e il Token Hugging Face per abilitare le funzionalità AI.
             </p>
 
             <div class="space-y-3">
-                <!-- 1. Gemini API Key -->
                 <div class="space-y-1">
                     <div class="flex justify-between items-center">
                         <label class="text-xs font-semibold text-brand-400 flex items-center gap-1.5">
@@ -433,22 +418,21 @@
                             Ottieni gratis <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
                         </a>
                     </div>
-                    <input type="password" id="custom-gemini-key" placeholder="Incolla chiave Gemini..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
-                    <p class="text-[10px] text-slate-400">Usata per l'analisi multimodale ed il testo con <b>Gemini 3 Flash</b>.</p>
+                    <input type="password" id="custom-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                    <p class="text-[10px] text-slate-400">Incolla la tua chiave ottenuta da Google AI Studio.</p>
                 </div>
 
-                <!-- 2. Hugging Face API Token -->
                 <div class="space-y-1">
                     <div class="flex justify-between items-center">
                         <label class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
-                            <i data-lucide="image" class="w-3.5 h-3.5"></i> 2. Hugging Face Token (Fine-Grained)
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i> 2. Hugging Face Token
                         </label>
                         <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="text-[10px] text-purple-400 hover:underline flex items-center gap-0.5">
                             Crea Token <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
                         </a>
                     </div>
                     <input type="password" id="custom-hf-token" placeholder="hf_..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-                    <p class="text-[10px] text-slate-400">Richiede token con permesso <b>Inference: write</b> attivo.</p>
+                    <p class="text-[10px] text-slate-400">Servono i permessi <b>"Make calls to Inference Providers"</b> o <b>"Inference: write"</b>.</p>
                 </div>
             </div>
 
@@ -460,12 +444,11 @@
 
     <!-- Application Logic Script -->
     <script>
-        // Global State
-        let loadedPhotos = []; // { id, file, dataUrl }
-        let generatedAiPhotos = []; // Base64 / Data URLs from HF
-        let inventory = []; // Saved products
+        let loadedPhotos = [];
+        let generatedAiPhotos = [];
+        let inventory = [];
 
-        // Hugging Face Models Sequence (Primary + Fallbacks)
+        // Modelli con Fallback per Hugging Face Router
         const HF_MODELS = [
             "black-forest-labs/FLUX.1-schnell",
             "stabilityai/stable-diffusion-xl-base-1.0",
@@ -473,17 +456,12 @@
         ];
         let hfPermissionErrorOccurred = false;
 
-        // Retrieve API Keys safely from localStorage
         function getGeminiApiKey() {
-            const savedKey = localStorage.getItem('GEMINI_API_KEY');
-            if (savedKey && savedKey.trim() !== '') return savedKey.trim();
-            return '';
+            return localStorage.getItem('GEMINI_API_KEY')?.trim() || '';
         }
 
         function getHuggingFaceToken() {
-            const savedToken = localStorage.getItem('HF_API_TOKEN');
-            if (savedToken && savedToken.trim() !== '') return savedToken.trim();
-            return '';
+            return localStorage.getItem('HF_API_TOKEN')?.trim() || '';
         }
 
         function toggleApiKeyModal() {
@@ -502,11 +480,10 @@
             if (geminiKey) localStorage.setItem('GEMINI_API_KEY', geminiKey);
             if (hfToken) localStorage.setItem('HF_API_TOKEN', hfToken);
 
-            showToast("Chiavi API aggiornate con successo!");
+            showToast("Chiavi API salvate!");
             toggleApiKeyModal();
         }
 
-        // Initialize UI
         window.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) lucide.createIcons();
             loadInventoryFromLocalStorage();
@@ -514,7 +491,6 @@
             updateButtonStates();
         });
 
-        // Tab Switching Logic
         function switchTab(tab) {
             const tabCreator = document.getElementById('tab-creator');
             const tabInventory = document.getElementById('tab-inventory');
@@ -535,7 +511,6 @@
             }
         }
 
-        // Toast Handler
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toast-message');
@@ -560,7 +535,6 @@
             }, 4000);
         }
 
-        // Image Selection & Dropzone Handlers
         function handleFileSelect(event) {
             const files = Array.from(event.target.files);
             processSelectedFiles(files);
@@ -635,27 +609,22 @@
             const sizeInput = document.getElementById('input-size');
             const hasSize = sizeInput && sizeInput.value.trim().length > 0;
 
-            const canAnalyze = hasPhotos && hasSize;
-            document.getElementById('btn-analyze').disabled = !canAnalyze;
+            document.getElementById('btn-analyze').disabled = !(hasPhotos && hasSize);
             
             const productName = document.getElementById('input-name').value.trim();
             document.getElementById('btn-generate-5-photos').disabled = !hasPhotos && !productName;
         }
 
-        // JSON Extraction Helper
         function extractJson(text) {
             try {
                 return JSON.parse(text);
             } catch (e) {
                 const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
-                }
-                throw new Error("Impossibile estrarre la struttura JSON valida dalla risposta dell'IA.");
+                if (jsonMatch) return JSON.parse(jsonMatch[0]);
+                throw new Error("Impossibile interpretare la risposta JSON dell'IA.");
             }
         }
 
-        // Price calculation based on markup radio select
         function calculatePrices() {
             const marketInput = document.getElementById('input-market-price');
             const listInput = document.getElementById('input-list-price');
@@ -673,7 +642,6 @@
             }
         }
 
-        // Helper Blob to Base64
         function blobToBase64(blob) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -683,23 +651,25 @@
             });
         }
 
-        // Copy text to clipboard
         function copyToClipboard(elementId) {
             const el = document.getElementById(elementId);
             if (!el) return;
             const text = el.value || el.innerText;
             if (!text) return;
 
-            const tempTextArea = document.createElement('textarea');
-            tempTextArea.value = text;
-            document.body.appendChild(tempTextArea);
-            tempTextArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempTextArea);
-            showToast("Testo copiato negli appunti!");
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Testo copiato!");
+            }).catch(() => {
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = text;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                showToast("Testo copiato!");
+            });
         }
 
-        // Local Storage Inventory functions
         function loadInventoryFromLocalStorage() {
             try {
                 const saved = localStorage.getItem('PRODUCT_INVENTORY');
@@ -708,7 +678,6 @@
                     document.getElementById('inventory-count-badge').textContent = inventory.length;
                 }
             } catch (e) {
-                console.error("Errore nel caricamento dell'inventario:", e);
                 inventory = [];
             }
         }
@@ -718,7 +687,7 @@
                 localStorage.setItem('PRODUCT_INVENTORY', JSON.stringify(inventory));
                 document.getElementById('inventory-count-badge').textContent = inventory.length;
             } catch (e) {
-                console.error("Errore nel salvataggio dell'inventario:", e);
+                console.error("Errore salvataggio:", e);
             }
         }
 
@@ -756,7 +725,7 @@
 
             inventory.unshift(newProduct);
             saveInventoryToLocalStorage();
-            showToast("Prodotto salvato con successo in inventario!");
+            showToast("Prodotto salvato in inventario!");
             resetCurrentProductForm();
             switchTab('inventory');
         }
@@ -910,7 +879,7 @@
         }
 
         // =========================================================
-        // 1. GEMINI 3 FLASH API: Analisi Multimodale
+        // 1. GEMINI 3 FLASH API: Analisi Multimodale Con Fallback
         // =========================================================
         async function analyzeProductWithGemini() {
             const sizeValue = document.getElementById('input-size').value.trim();
@@ -927,7 +896,7 @@
 
             const apiKey = getGeminiApiKey();
             if (!apiKey) {
-                showToast("Inserisci la tua API Key Gemini nelle impostazioni.", true);
+                showToast("Inserisci la tua API Key Gemini nella configurazione.", true);
                 toggleApiKeyModal();
                 return;
             }
@@ -936,7 +905,7 @@
             const badge = document.getElementById('analysis-status-badge');
             
             btnAnalyze.disabled = true;
-            btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Gemini 3 Flash analizza...</span>`;
+            btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Gemini analizza...</span>`;
             badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full font-medium flex items-center gap-1.5 border border-amber-500/30';
             badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Analisi foto in corso`;
             if (window.lucide) lucide.createIcons();
@@ -985,30 +954,50 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
     "descrizione_fluida": "Descrizione d'impatto, persuasiva e completa che cita la taglia ${sizeValue}"
 }`;
 
-                // Endpoint Gemini 3 Flash
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${apiKey}`;
+                // Lista dei nomi di modello per la compatibilità retroattiva e attuale
+                const geminiModels = [
+                    "gemini-3-flash-preview",
+                    "gemini-3-flash",
+                    "gemini-2.5-flash"
+                ];
 
-                const payload = {
-                    contents: [{ role: "user", parts: [{ text: userPrompt }, ...imageParts] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                };
+                let response = null;
+                let lastError = "";
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                for (const model of geminiModels) {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{ role: "user", parts: [{ text: userPrompt }, ...imageParts] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
 
-                if (!response.ok) {
-                    const errJson = await response.json().catch(() => ({}));
-                    const errMsg = errJson.error?.message || `Errore HTTP ${response.status} (${response.statusText})`;
-                    throw new Error(errMsg);
+                    try {
+                        const res = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (res.ok) {
+                            response = res;
+                            break;
+                        } else {
+                            const errJson = await res.json().catch(() => ({}));
+                            lastError = errJson.error?.message || `Status ${res.status}`;
+                        }
+                    } catch (e) {
+                        lastError = e.message;
+                    }
+                }
+
+                if (!response) {
+                    throw new Error(`Impossibile contattare l'API Gemini: ${lastError}`);
                 }
 
                 const result = await response.json();
                 const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (!responseText) throw new Error("Risposta vuota ricevuta da Gemini 3 Flash.");
+                if (!responseText) throw new Error("Risposta vuota ricevuta da Gemini.");
 
                 const parsed = extractJson(responseText);
 
@@ -1018,7 +1007,6 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 document.getElementById('input-market-price').value = parsed.prezzo_media_mercato || 0;
                 document.getElementById('input-description').value = parsed.descrizione_fluida || '';
 
-                // Insights Box
                 const insightsBox = document.getElementById('market-insights-box');
                 const demandBadge = document.getElementById('demand-badge');
                 const marketReasoning = document.getElementById('market-reasoning');
@@ -1028,11 +1016,11 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 if (parsed.oggetto_gia_in_inventario) {
                     demandBadge.textContent = "Gia' in Inventario";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0";
-                    showToast("Articolo trovato in inventario! Dati aggiornati.");
+                    showToast("Articolo già trovato in inventario!");
                 } else {
-                    demandBadge.textContent = "Analisi Gemini 3 Completata";
+                    demandBadge.textContent = "Analisi Gemini Completata";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex-shrink-0";
-                    showToast("Prodotto analizzato con successo con Gemini 3 Flash!");
+                    showToast("Prodotto analizzato con successo!");
                 }
 
                 marketReasoning.textContent = parsed.variazione_prezzo_motivo || "Valutazione completata con successo.";
@@ -1041,13 +1029,13 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                 updateButtonStates();
 
                 badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-brand-500/20 text-brand-300 rounded-full font-medium flex items-center gap-1.5 border border-brand-500/30';
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Analizzato da Gemini 3 Flash`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Analizzato da Gemini`;
 
             } catch (error) {
                 console.error("Errore Gemini API:", error);
                 showToast("Errore Gemini API: " + error.message, true);
                 badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-full font-medium flex items-center gap-1.5 border border-rose-500/30';
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Errore Gemini 3`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Errore Gemini`;
             } finally {
                 btnAnalyze.disabled = false;
                 btnAnalyze.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>1. Analizza con Gemini 3 Flash & Mercato</span>`;
@@ -1056,55 +1044,63 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
         }
 
         // =========================================================
-        // 2. HUGGING FACE INFERENCE API: Generazione Set 5 Foto
+        // 2. HUGGING FACE ROUTER API: Generazione Immagini
         // =========================================================
         async function fetchHuggingFaceImage(promptText, token) {
             let lastErrorMessage = "";
 
+            // Endpoints con supporto alle nuove chiavi e router Hugging Face
+            const endpoints = [
+                model => `https://router.huggingface.co/hf-inference/v1/models/${model}`,
+                model => `https://router.huggingface.co/models/${model}`,
+                model => `https://api-inference.huggingface.co/models/${model}`
+            ];
+
             for (const model of HF_MODELS) {
-                try {
-                    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            inputs: promptText,
-                            parameters: { width: 512, height: 512 }
-                        })
-                    });
+                for (const getUrl of endpoints) {
+                    try {
+                        const apiUrl = getUrl(model);
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                inputs: promptText,
+                                parameters: { width: 512, height: 512 }
+                            })
+                        });
 
-                    if (response.status === 503) {
-                        // Model is loading on Hugging Face (Cold Start), retry after a short delay
-                        await new Promise(r => setTimeout(r, 4000));
-                        return fetchHuggingFaceImage(promptText, token);
-                    }
+                        if (response.status === 503) {
+                            await new Promise(r => setTimeout(r, 3000));
+                            continue;
+                        }
 
-                    if (response.status === 401 || response.status === 403) {
-                        const errJson = await response.json().catch(() => ({}));
-                        lastErrorMessage = errJson.error || `Permesso negato (HTTP ${response.status}). Verificare i permessi del token Fine-Grained.`;
-                        console.warn(`HuggingFace auth error on ${model}:`, lastErrorMessage);
-                        hfPermissionErrorOccurred = true;
-                        break;
-                    }
+                        if (response.status === 401 || response.status === 403) {
+                            const errJson = await response.json().catch(() => ({}));
+                            lastErrorMessage = errJson.error || `Permessi non validi per il Token HF (Status ${response.status})`;
+                            hfPermissionErrorOccurred = true;
+                            break;
+                        }
 
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        return await blobToBase64(blob);
-                    } else {
-                        const errText = await response.text().catch(() => '');
-                        console.warn(`HuggingFace (${model}) Status ${response.status}: ${errText}`);
-                        lastErrorMessage = `Errore ${response.status} su modello ${model}`;
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            return await blobToBase64(blob);
+                        } else {
+                            const errText = await response.text().catch(() => '');
+                            console.warn(`HF Error (${model}): ${errText}`);
+                            lastErrorMessage = `Errore ${response.status} su modello ${model}`;
+                        }
+                    } catch (err) {
+                        console.error(`Errore connessione HF:`, err);
                     }
-                } catch (err) {
-                    console.error(`Errore durante chiamata HF a ${model}:`, err);
                 }
+                if (hfPermissionErrorOccurred) break;
             }
 
             if (lastErrorMessage) {
-                console.error("HF Failure:", lastErrorMessage);
+                console.error("HF Final Error:", lastErrorMessage);
             }
             return null;
         }
@@ -1141,7 +1137,6 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
 
             generatedAiPhotos = [];
 
-            // 5 Diverse Commercial Photography Prompts
             const stylePrompts = [
                 `Professional studio product photo of ${productName} ${colorName}, neutral studio background, crisp daylight, high quality catalogue photo, 8k resolution`,
                 `Close-up macro photography of ${productName} ${colorName}, detailed texture and fine craftsmanship, professional studio lighting`,
@@ -1163,17 +1158,16 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
             if (hfPermissionErrorOccurred) {
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 p-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl space-y-1">
-                        <p class="font-bold">Errore di Permesso (401/403)</p>
-                        <p class="text-[11px] text-slate-300">Il token Hugging Face richiede il permesso <b>"Inference: write"</b>.</p>
+                        <p class="font-bold">Errore di Permesso Token (401/403)</p>
+                        <p class="text-[11px] text-slate-300">Assicurati che il token su Hugging Face abbia attiva la spunta <b>"Make calls to Inference Providers"</b> o <b>"Inference: write"</b>.</p>
                     </div>`;
-                showToast("Errore Permessi Token HF: verifica i permessi di scrittura", true);
+                showToast("Errore Token HF: controlla i permessi su Hugging Face", true);
             } else if (generatedAiPhotos.length === 0) {
                 previewsContainer.innerHTML = `
                     <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl">
-                        Impossibile generare foto con Hugging Face.<br>
-                        Verifica che il Token sia corretto e riprova.
+                        Impossibile generare foto.<br>Verifica il token e riprova.
                     </div>`;
-                showToast("Generazione immagini Hugging Face non riuscita. Controlla il Token.", true);
+                showToast("Generazione immagini Hugging Face non riuscita.", true);
             } else {
                 previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
                     <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square shadow">
@@ -1183,7 +1177,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
                         </a>
                     </div>
                 `).join('');
-                showToast(`Generate ${generatedAiPhotos.length} foto con Hugging Face!`);
+                showToast(`Generate ${generatedAiPhotos.length} foto con successo!`);
             }
 
             btnGen.disabled = false;
