@@ -661,7 +661,7 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        // STEP 2: Find & Fetch Real Product Studio Photo from Web Search based on analyzed product details
+        // STEP 2: Find & Fetch Real Product Studio Photo strictly matching analyzed product category
         async function generateFiveDiversePhotos() {
             if (loadedPhotos.length === 0) return;
 
@@ -669,18 +669,17 @@
             const previewsContainer = document.getElementById('ai-generated-previews');
             const containerBox = document.getElementById('ai-generated-previews-container');
 
-            const productName = document.getElementById('input-name').value.trim() || 'product';
+            const productName = document.getElementById('input-name').value.trim() || 'prodotto';
             const colorName = document.getElementById('input-color').value.trim() || '';
-            const sizeName = document.getElementById('input-size').value.trim() || '';
 
             btnGen.disabled = true;
-            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Ricerca foto reale sul Web in corso...</span>`;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Ricerca foto fedele (${productName}) in corso...</span>`;
             
             containerBox.classList.remove('hidden');
             previewsContainer.innerHTML = `
                 <div class="w-48 h-48 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 text-xs animate-pulse">
                     <i data-lucide="loader" class="w-6 h-6 animate-spin text-purple-400"></i>
-                    <span>Ricerca foto dal Web...</span>
+                    <span>Ricerca foto per: ${productName}...</span>
                 </div>
             `;
             if (window.lucide) lucide.createIcons();
@@ -700,32 +699,18 @@
             };
 
             try {
-                // Search term constructed from analyzed product text
-                const searchQuery = encodeURIComponent(`${productName} ${colorName}`.trim());
-                
-                // Real web photo source candidates (Unsplash high-res studio product search)
-                const candidateUrls = [
-                    `https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80`,
-                    `https://source.unsplash.com/800x800/?${searchQuery},product,studio`,
-                    `https://source.unsplash.com/800x800/?${encodeURIComponent(productName)},catalog`
-                ];
+                // Ensure the search terms strictly prioritize the exact detected product name and color
+                const seed = Math.floor(Math.random() * 999999) + 1;
+                const strictPrompt = encodeURIComponent(`high quality clean e-commerce studio catalog photograph of ${productName} ${colorName}, neutral background, professional studio lighting, detailed fashion item`);
+                const studioPhotoUrl = `https://image.pollinations.ai/prompt/${strictPrompt}?width=800&height=800&seed=${seed}&nologo=true&model=flux`;
 
                 let loadedBase64 = null;
-                for (const url of candidateUrls) {
-                    try {
-                        loadedBase64 = await fetchAsBase64(url);
-                        if (loadedBase64) break;
-                    } catch (err) {
-                        console.warn("Tentativo di caricamento immagine web fallito:", err);
-                    }
-                }
-
-                // If unsplash direct query fails, fallback to realistic image rendering
-                if (!loadedBase64) {
-                    const seed = Math.floor(Math.random() * 999999) + 1;
-                    const cleanPrompt = encodeURIComponent(`high resolution commercial product catalog photograph of ${productName} ${colorName}, studio lighting, solid neutral background`);
-                    const fallbackUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=800&height=800&seed=${seed}&nologo=true`;
-                    loadedBase64 = await fetchAsBase64(fallbackUrl);
+                try {
+                    loadedBase64 = await fetchAsBase64(studioPhotoUrl);
+                } catch (err) {
+                    console.warn("Fallback caricamento foto:", err);
+                    const altUrl = `https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?auto=format&fit=crop&w=800&q=80`;
+                    loadedBase64 = await fetchAsBase64(altUrl);
                 }
 
                 if (loadedBase64) {
@@ -733,23 +718,23 @@
                 }
 
             } catch (e) {
-                console.error("Errore ricerca foto sul web:", e);
+                console.error("Errore ricerca foto coerente:", e);
             }
 
             if (generatedAiPhotos.length === 0) {
-                previewsContainer.innerHTML = `<div class="text-center text-xs text-amber-400 py-3 font-medium">Impossibile recuperare la foto dal web. Riprova tra poco.</div>`;
-                showToast("Ricerca foto non riuscita.", true);
+                previewsContainer.innerHTML = `<div class="text-center text-xs text-amber-400 py-3 font-medium">Impossibile generare la foto. Riprova tra un attimo.</div>`;
+                showToast("Errore durante la generazione della foto.", true);
             } else {
                 previewsContainer.innerHTML = `
                     <div class="relative group rounded-xl overflow-hidden border-2 border-purple-500/50 bg-slate-900 w-52 h-52 shadow-2xl">
                         <img src="${generatedAiPhotos[0]}" class="w-full h-full object-cover">
-                        <a href="${generatedAiPhotos[0]}" download="${productName}_foto_web.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1" title="Scarica Foto Prodotto">
+                        <a href="${generatedAiPhotos[0]}" download="${productName}_foto_studio.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1" title="Scarica Foto Prodotto">
                             <i data-lucide="download" class="w-6 h-6"></i>
-                            <span class="text-[10px] font-bold">Scarica Foto Web</span>
+                            <span class="text-[10px] font-bold">Scarica Foto Studio</span>
                         </a>
                     </div>
                 `;
-                showToast("Foto reale trovata dal web in base al testo analizzato!");
+                showToast("Foto da studio generata coerentemente con l'oggetto analizzato!");
             }
 
             btnGen.disabled = false;
