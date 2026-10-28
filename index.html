@@ -411,7 +411,7 @@
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                    <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Impostazioni Chiavi API
+                    <i data-lucide="key" class="w-4 h-4 text-amber-400"></i> Configurazione Chiavi API
                 </h3>
                 <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
                     <i data-lucide="x" class="w-4 h-4"></i>
@@ -419,26 +419,36 @@
             </div>
             
             <p class="text-xs text-slate-300 leading-relaxed">
-                Fornisci le due chiavi API distinte per abilitare l'analisi del testo e la generazione di foto IA.
+                Fornisci le due chiavi API per abilitare l'analisi del testo e la generazione delle foto.
             </p>
 
             <div class="space-y-3">
                 <!-- 1. Gemini API Key -->
                 <div class="space-y-1">
-                    <label class="text-xs font-semibold text-brand-400 flex items-center gap-1.5">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 1. Gemini API Key (Testo & Vision)
-                    </label>
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-semibold text-brand-400 flex items-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 1. Gemini API Key
+                        </label>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-[10px] text-brand-400 hover:underline flex items-center gap-0.5">
+                            Ottieni gratis <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+                        </a>
+                    </div>
                     <input type="password" id="custom-gemini-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
-                    <p class="text-[10px] text-slate-400">Utilizzata per analizzare le foto, determinare nome, colore e prezzo.</p>
+                    <p class="text-[10px] text-slate-400">Usata per analizzare l'immagine e creare il testo con Gemini 2.5 Flash.</p>
                 </div>
 
                 <!-- 2. Hugging Face API Token -->
                 <div class="space-y-1">
-                    <label class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
-                        <i data-lucide="image" class="w-3.5 h-3.5"></i> 2. Hugging Face API Token (Generazione Foto)
-                    </label>
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
+                            <i data-lucide="image" class="w-3.5 h-3.5"></i> 2. Hugging Face Token
+                        </label>
+                        <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener" class="text-[10px] text-purple-400 hover:underline flex items-center gap-0.5">
+                            Crea Token <i data-lucide="external-link" class="w-2.5 h-2.5"></i>
+                        </a>
+                    </div>
                     <input type="password" id="custom-hf-token" placeholder="hf_..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-purple-500">
-                    <p class="text-[10px] text-slate-400">Utilizzata per generare le 5 foto con modelli FLUX o SDXL.</p>
+                    <p class="text-[10px] text-slate-400">Richiede un User Access Token di Hugging Face (tipo 'Read' o 'Make calls').</p>
                 </div>
             </div>
 
@@ -455,8 +465,9 @@
         let generatedAiPhotos = []; // Base64 / Data URLs from HF
         let inventory = []; // Saved products
 
-        // Hugging Face Models to use for image generation
-        const HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"; // Fallback to stabilityai/stable-diffusion-xl-base-1.0 if needed
+        // Hugging Face Primary & Fallback Models
+        const HF_PRIMARY_MODEL = "black-forest-labs/FLUX.1-schnell";
+        const HF_FALLBACK_MODEL = "stabilityai/stable-diffusion-xl-base-1.0";
 
         // Retrieve API Keys safely from localStorage or environment
         function getGeminiApiKey() {
@@ -543,7 +554,7 @@
             setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0');
-            }, 3500);
+            }, 4000);
         }
 
         // Image Selection & Dropzone Handlers
@@ -624,23 +635,8 @@
             const canAnalyze = hasPhotos && hasSize;
             document.getElementById('btn-analyze').disabled = !canAnalyze;
             
-            // Allow generating HF photos if we have analyzed or filled product details
             const productName = document.getElementById('input-name').value.trim();
             document.getElementById('btn-generate-5-photos').disabled = !hasPhotos && !productName;
-        }
-
-        // Fetch with Retry Logic
-        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const res = await fetch(url, options);
-                    if (res.ok) return res;
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                }
-                await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
-            }
-            throw new Error("Impossibile contattare il servizio IA.");
         }
 
         // JSON Extraction Helper
@@ -652,7 +648,7 @@
                 if (jsonMatch) {
                     return JSON.parse(jsonMatch[0]);
                 }
-                throw new Error("Formato JSON non valido nella risposta Gemini.");
+                throw new Error("Impossibile estrarre la struttura JSON valida dalla risposta dell'IA.");
             }
         }
 
@@ -675,13 +671,13 @@
         }
 
         // =========================================================
-        // 1. GEMINI API: Analyze Product Image + Generate Text
+        // 1. GEMINI API: Analisi Multimodale + Generazione Scheda
         // =========================================================
         async function analyzeProductWithGemini() {
             const sizeValue = document.getElementById('input-size').value.trim();
 
             if (loadedPhotos.length === 0) {
-                showToast("Carica almeno 1 foto per analizzare con Gemini.", true);
+                showToast("Carica almeno 1 foto prima di avviare l'analisi.", true);
                 return;
             }
 
@@ -703,7 +699,7 @@
             btnAnalyze.disabled = true;
             btnAnalyze.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Gemini sta analizzando...</span>`;
             badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-amber-500/20 text-amber-300 rounded-full font-medium flex items-center gap-1.5 border border-amber-500/30';
-            badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Analisi foto & Mercato`;
+            badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Analisi foto in corso`;
             if (window.lucide) lucide.createIcons();
 
             try {
@@ -722,35 +718,35 @@
                     createdAt: item.createdAt
                 }));
 
-                const userPrompt = `Sei un esperto stimatore di prodotti e gestore di e-commerce.
+                const userPrompt = `Sei un esperto stimatore di prodotti e-commerce.
 
-INFORMAZIONI DI INGRESSO:
-- TAGLIA / DIMENSIONE MANUALE: "${sizeValue}"
-- INVENTARIO ESISTENTE: ${JSON.stringify(existingItemsSummary)}
+DATI IN INGRESSO:
+- TAGLIA/MISURA MANUALE: "${sizeValue}"
+- INVENTARIO SALVATO: ${JSON.stringify(existingItemsSummary)}
 
-REGOLE TASSATIVE DI RISPOSTA:
+REGOLE TASSATIVE:
 1. CONTROLLO INVENTARIO:
    - Verifica se l'oggetto nelle foto e taglia "${sizeValue}" è già presente nell'inventario esistente.
-   - Campo "oggetto_gia_in_inventario": true o false.
-   - Campo "variazione_prezzo_motivo": Spiega se era già presente o motiva la valutazione.
+   - Rispondi con true o false nel campo "oggetto_gia_in_inventario".
 
-2. SE NUOVO OGGETTO:
-   - Calcola un unico PREZZO DI MERCATO medio realistico e stabile in Euro (€) per l'articolo della misura "${sizeValue}".
+2. PREZZO DI MERCATO:
+   - Determina UN UNICO PREZZO DI MERCATO medio e realistico in Euro (€) per l'articolo identificato.
 
 3. SCHEDA PRODOTTO:
-   - Genera un titolo/nome chiaro, il colore esatto rilevato e una descrizione persuasiva d'impatto pronto per marketplace che evidenzia la misura/taglia "${sizeValue}".
+   - Crea un nome prodotto chiaro, rileva il colore esatto e componi una descrizione persuasiva d'impatto pronta per la vendita, includendo la taglia "${sizeValue}".
 
-Rispondi ESCLUSIVAMENTE in formato JSON valido:
+Rispondi ESCLUSIVAMENTE in formato JSON valido con questa struttura esatta:
 {
     "oggetto_gia_in_inventario": false,
     "nome_prodotto": "Nome preciso ed elegante del prodotto",
     "colore_esatto": "Colore esatto visibile",
     "prezzo_media_mercato": 49.99,
     "livello_domanda": "Alta / Media / Nicchia",
-    "variazione_prezzo_motivo": "Motivazione del prezzo stimato o conferma inventario",
-    "descrizione_fluida": "Descrizione d'impatto, persuasiva e completa che include la taglia ${sizeValue}"
+    "variazione_prezzo_motivo": "Motivazione della stima prezzo o conferma riscontro in inventario",
+    "descrizione_fluida": "Descrizione d'impatto, persuasiva e completa che cita la taglia ${sizeValue}"
 }`;
 
+                // Official stable endpoint for Gemini 2.5 Flash
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
                 const payload = {
@@ -758,16 +754,22 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
                     generationConfig: { responseMimeType: "application/json" }
                 };
 
-                const response = await fetchWithRetry(apiUrl, {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
+                if (!response.ok) {
+                    const errJson = await response.json().catch(() => ({}));
+                    const errMsg = errJson.error?.message || `Errore HTTP ${response.status} (${response.statusText})`;
+                    throw new Error(errMsg);
+                }
+
                 const result = await response.json();
                 const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (!responseText) throw new Error("Risposta vuota da Gemini API.");
+                if (!responseText) throw new Error("Risposta vuota ricevuta da Gemini.");
 
                 const parsed = extractJson(responseText);
 
@@ -787,14 +789,14 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
                 if (parsed.oggetto_gia_in_inventario) {
                     demandBadge.textContent = "Gia' in Inventario";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex-shrink-0";
-                    showToast("Articolo già rilevato in inventario!");
+                    showToast("Articolo trovato in inventario! Dati aggiornati.");
                 } else {
                     demandBadge.textContent = "Analisi Gemini Completata";
                     demandBadge.className = "px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30 flex-shrink-0";
-                    showToast("Prodotto analizzato con successo da Gemini!");
+                    showToast("Prodotto analizzato con successo con Gemini!");
                 }
 
-                marketReasoning.textContent = parsed.variazione_prezzo_motivo || "Valutazione elaborata con successo.";
+                marketReasoning.textContent = parsed.variazione_prezzo_motivo || "Valutazione completata con successo.";
 
                 calculatePrices();
                 updateButtonStates();
@@ -803,8 +805,8 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-brand-400"></span> Analizzato da Gemini`;
 
             } catch (error) {
-                console.error("Errore analisi Gemini:", error);
-                showToast("Errore Gemini: " + error.message, true);
+                console.error("Errore Gemini API:", error);
+                showToast("Errore Gemini API: " + error.message, true);
                 badge.className = 'text-[10px] sm:text-xs px-2.5 py-1 bg-rose-500/20 text-rose-300 rounded-full font-medium flex items-center gap-1.5 border border-rose-500/30';
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Errore Gemini`;
             } finally {
@@ -815,15 +817,53 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
         }
 
         // =========================================================
-        // 2. HUGGING FACE INFERENCE API: Generate 5 Photos
+        // 2. HUGGING FACE INFERENCE API: Generazione Set 5 Foto
         // =========================================================
+        async function fetchHuggingFaceImage(promptText, token) {
+            const models = [HF_PRIMARY_MODEL, HF_FALLBACK_MODEL];
+            
+            for (const model of models) {
+                try {
+                    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            inputs: promptText,
+                            parameters: { width: 512, height: 512 }
+                        })
+                    });
+
+                    if (response.status === 503) {
+                        // Model is loading on Hugging Face, retry after a short delay
+                        await new Promise(r => setTimeout(r, 4000));
+                        return fetchHuggingFaceImage(promptText, token);
+                    }
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        return await blobToBase64(blob);
+                    } else {
+                        const errText = await response.text().catch(() => '');
+                        console.warn(`HuggingFace (${model}) Status ${response.status}: ${errText}`);
+                    }
+                } catch (err) {
+                    console.error(`Errore durante chiamata HF a ${model}:`, err);
+                }
+            }
+            return null;
+        }
+
         async function generateFiveDiversePhotosWithHF() {
-            const productName = document.getElementById('input-name').value.trim() || "Prodotto e-commerce";
+            const productName = document.getElementById('input-name').value.trim() || "Commercial product";
             const colorName = document.getElementById('input-color').value.trim() || "";
 
             const hfToken = getHuggingFaceToken();
             if (!hfToken) {
-                showToast("Inserisci il tuo Hugging Face API Token nelle impostazioni.", true);
+                showToast("Inserisci il tuo Token Hugging Face nelle impostazioni API.", true);
                 toggleApiKeyModal();
                 return;
             }
@@ -834,13 +874,13 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
             const generatedCountLabel = document.getElementById('generated-count');
 
             btnGen.disabled = true;
-            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Generazione Hugging Face...</span>`;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Generazione con Hugging Face...</span>`;
             
             containerBox.classList.remove('hidden');
             previewsContainer.innerHTML = Array(5).fill(0).map((_, i) => `
                 <div class="aspect-square bg-slate-950 border border-slate-800 rounded-lg flex flex-col items-center justify-center gap-1 text-slate-500 text-[9px] animate-pulse">
                     <i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>
-                    <span>Scatto ${i+1}...</span>
+                    <span>Foto ${i+1}...</span>
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
@@ -849,49 +889,29 @@ Rispondi ESCLUSIVAMENTE in formato JSON valido:
 
             // 5 Diverse Commercial Photography Prompts
             const stylePrompts = [
-                `Professional clean studio product photography of ${productName} ${colorName}, neutral light gray studio background, soft daylight, commercial catalogue shot, 8k resolution`,
-                `Extreme macro close-up photography of ${productName} ${colorName}, focusing on fine texture, material quality, stitching details, professional lighting`,
-                `Lifestyle photography of ${productName} ${colorName} in an elegant modern indoor setting, shallow depth of field, warm ambient light`,
-                `45 degree angle full product shot of ${productName} ${colorName}, perfectly lit studio setup, crisp shadows, e-commerce ready`,
-                `Luxury boutique e-commerce display setup with ${productName} ${colorName}, elegant aesthetic composition, high resolution photo`
+                `Professional studio product photo of ${productName} ${colorName}, neutral studio background, crisp daylight, high quality catalogue photo, 8k resolution`,
+                `Close-up macro photography of ${productName} ${colorName}, detailed texture and fine craftsmanship, professional studio lighting`,
+                `Lifestyle photography of ${productName} ${colorName} in a sleek modern luxury interior setting, warm natural depth of field`,
+                `Full shot of ${productName} ${colorName} at 45 degree angle, clean white background, soft shadows, e-commerce catalog ready`,
+                `E-commerce product display of ${productName} ${colorName}, minimal aesthetic layout, realistic studio photography`
             ];
 
-            const apiUrl = `https://api-inference.huggingface.co/models/${HF_IMAGE_MODEL}`;
-
             for (let i = 0; i < stylePrompts.length; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${hfToken}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            inputs: stylePrompts[i],
-                            parameters: {
-                                width: 512,
-                                height: 512
-                            }
-                        })
-                    });
-
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        const base64Url = await blobToBase64(blob);
-                        generatedAiPhotos.push(base64Url);
-                    } else {
-                        console.warn(`Hugging Face errore scatto ${i+1}: status ${response.status}`);
-                    }
-                } catch (e) {
-                    console.error("Errore generazione foto HF " + (i+1), e);
+                const imgDataUrl = await fetchHuggingFaceImage(stylePrompts[i], hfToken);
+                if (imgDataUrl) {
+                    generatedAiPhotos.push(imgDataUrl);
                 }
             }
 
             generatedCountLabel.textContent = generatedAiPhotos.length;
 
             if (generatedAiPhotos.length === 0) {
-                previewsContainer.innerHTML = `<div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium">Impossibile generare le foto. Verifica che l'Hugging Face Token sia valido e che il modello sia disponibile.</div>`;
-                showToast("Generazione immagini Hugging Face fallita.", true);
+                previewsContainer.innerHTML = `
+                    <div class="col-span-3 xs:col-span-5 text-center text-xs text-rose-400 py-3 font-medium bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                        Impossibile generare foto con Hugging Face.<br>
+                        Verifica che il Token sia valido e abbia i permessi di chiamata Inference.
+                    </div>`;
+                showToast("Generazione immagini Hugging Face non riuscita. Controlla il Token.", true);
             } else {
                 previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, index) => `
                     <div class="relative group rounded-lg overflow-hidden border border-purple-500/40 bg-slate-900 aspect-square shadow">
