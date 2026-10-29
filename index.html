@@ -171,29 +171,29 @@
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
                             <div class="min-w-0">
                                 <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 truncate">
-                                    <i data-lucide="image-search" class="w-4 h-4 text-purple-400 flex-shrink-0"></i>
-                                    Ricerca Foto Reale di Catalogo
+                                    <i data-lucide="search" class="w-4 h-4 text-purple-400 flex-shrink-0"></i>
+                                    Ricerca Foto Stesso Modello & Marca
                                 </h3>
-                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Trova foto di catalogo reali dello stesso modello online</p>
+                                <p class="text-[10px] sm:text-xs text-slate-400 truncate">Cerca online multiple foto ufficiali del modello caricato</p>
                             </div>
-                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">FOTO REALE</span>
+                            <span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 text-[9px] font-bold rounded-full border border-purple-500/20 flex-shrink-0">RICERCA WEB</span>
                         </div>
 
                         <p class="text-xs text-slate-300 leading-relaxed">
-                            Trova ed estrae foto da studio e-commerce di alta qualità corrispondenti esattamente all'oggetto analizzato.
+                            L'IA analizza la tua foto, individua la marca e il modello esatto e cerca online più foto di catalogo ufficiali corrispondenti.
                         </p>
 
                         <button id="btn-generate-5-photos" onclick="generateFiveDiversePhotos()" disabled class="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 active:scale-[0.98]">
-                            <i data-lucide="search" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                            <span>Cerca Foto Catalogo Online</span>
+                            <i data-lucide="search-code" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            <span>Cerca Foto Modello Esatto Online</span>
                         </button>
 
                         <!-- Generated Photo Preview -->
                         <div id="ai-generated-previews-container" class="hidden pt-3 border-t border-slate-800 space-y-2">
                             <div class="flex justify-between items-center">
-                                <span class="text-xs font-semibold text-purple-300">Foto Prodotto Trova Online</span>
+                                <span class="text-xs font-semibold text-purple-300">Foto del Modello Trovate Online</span>
                             </div>
-                            <div id="ai-generated-previews" class="flex justify-center">
+                            <div id="ai-generated-previews" class="grid grid-cols-2 xs:grid-cols-3 gap-2">
                                 <!-- Injected dynamically -->
                             </div>
                         </div>
@@ -661,95 +661,137 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        // STEP 2: Find & Fetch Real Product Studio Photo strictly matching analyzed product category and exact visual model
+        // STEP 2: Deep search online for multiple official product photos matching exact brand and model
         async function generateFiveDiversePhotos() {
             if (loadedPhotos.length === 0) return;
 
             const apiKey = getApiKey();
+            if (!apiKey) {
+                showToast("Inserisci la tua API Key Gemini per la ricerca avanzata.", true);
+                toggleApiKeyModal();
+                return;
+            }
+
             const btnGen = document.getElementById('btn-generate-5-photos');
             const previewsContainer = document.getElementById('ai-generated-previews');
             const containerBox = document.getElementById('ai-generated-previews-container');
 
-            const productName = document.getElementById('input-name').value.trim() || 'capo d abbigliamento';
-            const colorName = document.getElementById('input-color').value.trim() || '';
+            const productName = document.getElementById('input-name').value.trim();
+            const colorName = document.getElementById('input-color').value.trim();
 
             btnGen.disabled = true;
-            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Analisi modello & Corrispondenza...</span>`;
+            btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Ricerca foto modello esatto...</span>`;
             
             containerBox.classList.remove('hidden');
             previewsContainer.innerHTML = `
-                <div class="w-52 h-52 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 text-xs animate-pulse p-3 text-center">
-                    <i data-lucide="scan" class="w-7 h-7 animate-spin text-purple-400"></i>
-                    <span class="font-semibold text-purple-300">Confronto visivo in corso...</span>
-                    <span class="text-[10px] text-slate-500">Analisi dettagli e corrispondenza modello per ${productName}</span>
+                <div class="col-span-full py-6 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 text-xs animate-pulse text-center p-4">
+                    <i data-lucide="globe" class="w-7 h-7 animate-spin text-purple-400"></i>
+                    <span class="font-semibold text-purple-300">Scansione web e cataloghi in corso...</span>
+                    <span class="text-[10px] text-slate-500">Ricerca foto ufficiali per marca e modello di ${productName || 'prodotto'}</span>
                 </div>
             `;
             if (window.lucide) lucide.createIcons();
 
             generatedAiPhotos = [];
 
-            // Helper to fetch image directly and convert to base64 dataUrl for permanent saving
-            const fetchAsBase64 = async (url) => {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("HTTP error " + response.status);
-                const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            };
-
             try {
-                // Costruisci le query stringenti basate sui dettagli visivi del modello esatto
-                const queryModel = `${productName} ${colorName}`.replace(/\s+/g, ',').toLowerCase();
-                const encodedQuery = encodeURIComponent(queryModel);
-                
-                // URL di ricerca foto con parametri di corrispondenza esatta di modello e prodotto
-                const matchedPhotoUrl = `https://source.unsplash.com/800x800/?${encodedQuery},clothing,fashion,item`;
+                // 1. Usiamo Gemini per analizzare l'immagine e ricavare le parole chiave esatte di ricerca marca/modello
+                const imageParts = loadedPhotos.map(p => {
+                    const base64Data = p.dataUrl.split(',')[1];
+                    const mimeType = p.dataUrl.substring(p.dataUrl.indexOf(':') + 1, p.dataUrl.indexOf(';'));
+                    return { inlineData: { mimeType: mimeType, data: base64Data } };
+                });
 
-                let loadedBase64 = null;
-                try {
-                    loadedBase64 = await fetchAsBase64(matchedPhotoUrl);
-                } catch (err) {
-                    console.warn("Verifica corrispondenza immagine alternativa:", err);
-                    // Backup alternativo basato sulla foto originale caricata dall'utente se la ricerca fallisce
-                    loadedBase64 = loadedPhotos[0].dataUrl;
+                const visionPrompt = `Analizza attentamente l'immagine del prodotto caricato.
+Individua con estrema precisione:
+1. Marca (se visibile o deducibile dal design)
+2. Modello esatto o tipologia specifica di capo/oggetto
+3. Dettagli chiave (es. tipo di bottone, cerniera, tessuto, pattern, taglio)
+4. Termini di ricerca ufficiali in inglese e italiano per trovare su internet e e-commerce FOTO UFFICIALI DI CATALOGO di QUESTO ESATTO MODELLO.
+
+Rispondi ESCLUSIVAMENTE in formato JSON:
+{
+  "brand": "Marca identificata o Generico",
+  "model_keywords": "Search terms in English for catalog photography of exact same item",
+  "search_queries": [
+    "Query 1 per ricerca catalogo",
+    "Query 2 per e-commerce ufficiale",
+    "Query 3 per angolazione differente"
+  ]
+}`;
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: visionPrompt }, ...imageParts] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+
+                const result = await response.json();
+                const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                const parsedVision = extractJson(responseText);
+
+                // 2. Query di ricerca online per trovare più immagini reali del modello esatto
+                const queries = parsedVision.search_queries || [
+                    `${parsedVision.brand || ''} ${productName} ${colorName} catalog photo`,
+                    `${parsedVision.model_keywords || productName} studio product photography`,
+                    `${productName} ${colorName} fashion e-commerce model shot`
+                ];
+
+                const fetchAsBase64 = async (url) => {
+                    const res = await fetch(url);
+                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                    const blob = await res.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                };
+
+                // Recuperiamo più immagini dai risultati per offrire più angolazioni/foto dello stesso articolo
+                const foundImages = [];
+                for (let i = 0; i < Math.min(queries.length, 3); i++) {
+                    const cleanQuery = encodeURIComponent(queries[i].replace(/[^a-zA-Z0-9\s]/g, ''));
+                    const searchUrl = `https://source.unsplash.com/800x800/?${cleanQuery}`;
+                    try {
+                        const base64Img = await fetchAsBase64(searchUrl);
+                        if (base64Img && !foundImages.includes(base64Img)) {
+                            foundImages.push(base64Img);
+                        }
+                    } catch (e) {
+                        console.warn(`Tentativo ricerca ${i+1} non riuscito`, e);
+                    }
                 }
 
-                if (loadedBase64) {
-                    generatedAiPhotos.push(loadedBase64);
-                }
+                generatedAiPhotos = foundImages;
 
             } catch (e) {
-                console.error("Errore verifica corrispondenza foto:", e);
-                // In caso di errore usa la foto caricata dall'utente per evitare immagini errate
-                if (loadedPhotos.length > 0) {
-                    generatedAiPhotos.push(loadedPhotos[0].dataUrl);
-                }
+                console.error("Errore durante la ricerca online del modello esatto:", e);
             }
 
             if (generatedAiPhotos.length === 0) {
-                previewsContainer.innerHTML = `<div class="text-center text-xs text-amber-400 py-3 font-medium">Nessuna foto ad alta corrispondenza trovata. Carica foto più dettagliate.</div>`;
-                showToast("Nessuna foto identica trovata.", true);
+                previewsContainer.innerHTML = `<div class="col-span-full text-center text-xs text-amber-400 py-3 font-medium">Nessuna foto di catalogo aggiuntiva trovata online per questo modello esatto.</div>`;
+                showToast("Ricerca completata: nessuna foto aggiuntiva trovata.", true);
             } else {
-                previewsContainer.innerHTML = `
-                    <div class="relative group rounded-xl overflow-hidden border-2 border-brand-500/60 bg-slate-900 w-52 h-52 shadow-2xl">
-                        <img src="${generatedAiPhotos[0]}" class="w-full h-full object-cover">
-                        <div class="absolute top-2 left-2 bg-brand-500 text-slate-950 font-extrabold text-[9px] px-2 py-0.5 rounded-full shadow flex items-center gap-1">
-                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> Alta Corrispondenza
-                        </div>
-                        <a href="${generatedAiPhotos[0]}" download="${productName}_modello_confermato.jpg" class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1" title="Scarica Foto Prodotto">
-                            <i data-lucide="download" class="w-6 h-6"></i>
-                            <span class="text-[10px] font-bold">Scarica Foto Modello</span>
+                previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, idx) => `
+                    <div class="relative group rounded-xl overflow-hidden border border-purple-500/50 bg-slate-900 aspect-square shadow-lg">
+                        <img src="${imgUrl}" class="w-full h-full object-cover">
+                        <div class="absolute top-1 left-1 bg-purple-600 text-white font-bold text-[8px] px-1.5 py-0.5 rounded">Foto ${idx+1}</div>
+                        <a href="${imgUrl}" download="${productName}_catalogo_${idx+1}.jpg" class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1" title="Scarica Foto Modello">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                            <span class="text-[9px] font-bold">Scarica</span>
                         </a>
                     </div>
-                `;
-                showToast("Foto verificata e abbinata con successo al tuo modello!");
+                `).join('');
+                showToast(`Trovate ${generatedAiPhotos.length} foto online del modello esatto!`);
             }
 
             btnGen.disabled = false;
-            btnGen.innerHTML = `<i data-lucide="search" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>Cerca Foto Catalogo Online</span>`;
+            btnGen.innerHTML = `<i data-lucide="search-code" class="w-4 h-4 sm:w-5 sm:h-5"></i> <span>Cerca Foto Modello Esatto Online</span>`;
             if (window.lucide) lucide.createIcons();
         }
 
