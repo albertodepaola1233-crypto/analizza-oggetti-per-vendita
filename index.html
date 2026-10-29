@@ -676,8 +676,8 @@
             const previewsContainer = document.getElementById('ai-generated-previews');
             const containerBox = document.getElementById('ai-generated-previews-container');
 
-            const productName = document.getElementById('input-name').value.trim();
-            const colorName = document.getElementById('input-color').value.trim();
+            const productName = document.getElementById('input-name').value.trim() || 'prodotto';
+            const colorName = document.getElementById('input-color').value.trim() || '';
 
             btnGen.disabled = true;
             btnGen.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin"></i> <span>Ricerca foto modello esatto...</span>`;
@@ -686,8 +686,8 @@
             previewsContainer.innerHTML = `
                 <div class="col-span-full py-6 bg-slate-950 border border-slate-800 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 text-xs animate-pulse text-center p-4">
                     <i data-lucide="globe" class="w-7 h-7 animate-spin text-purple-400"></i>
-                    <span class="font-semibold text-purple-300">Scansione web e cataloghi in corso...</span>
-                    <span class="text-[10px] text-slate-500">Ricerca foto ufficiali per marca e modello di ${productName || 'prodotto'}</span>
+                    <span class="font-semibold text-purple-300">Ricerca multicanale e-commerce e cataloghi...</span>
+                    <span class="text-[10px] text-slate-500">Ricerca avanzata per ${productName}</span>
                 </div>
             `;
             if (window.lucide) lucide.createIcons();
@@ -695,28 +695,25 @@
             generatedAiPhotos = [];
 
             try {
-                // 1. Usiamo Gemini per analizzare l'immagine e ricavare le parole chiave esatte di ricerca marca/modello
-                const imageParts = loadedPhotos.map(p => {
-                    const base64Data = p.dataUrl.split(',')[1];
-                    const mimeType = p.dataUrl.substring(p.dataUrl.indexOf(':') + 1, p.dataUrl.indexOf(';'));
-                    return { inlineData: { mimeType: mimeType, data: base64Data } };
-                });
+                // Estraggo base64 e mimetype in modo ottimizzato
+                const imageParts = loadedPhotos.map(p => ({
+                    inlineData: {
+                        mimeType: p.dataUrl.substring(p.dataUrl.indexOf(':') + 1, p.dataUrl.indexOf(';')),
+                        data: p.dataUrl.split(',')[1]
+                    }
+                }));
 
-                const visionPrompt = `Analizza attentamente l'immagine del prodotto caricato.
-Individua con estrema precisione:
-1. Marca (se visibile o deducibile dal design)
-2. Modello esatto o tipologia specifica di capo/oggetto
-3. Dettagli chiave (es. tipo di bottone, cerniera, tessuto, pattern, taglio)
-4. Termini di ricerca ufficiali in inglese e italiano per trovare su internet e e-commerce FOTO UFFICIALI DI CATALOGO di QUESTO ESATTO MODELLO.
+                const visionPrompt = `Analizza l'immagine dell'oggetto caricato per trovarlo sul web.
+Fornisci termini di ricerca precisi per trovare foto trasparenti/catalogo di questo specifico articolo.
 
-Rispondi ESCLUSIVAMENTE in formato JSON:
+Rispondi SOLO JSON:
 {
-  "brand": "Marca identificata o Generico",
-  "model_keywords": "Search terms in English for catalog photography of exact same item",
-  "search_queries": [
-    "Query 1 per ricerca catalogo",
-    "Query 2 per e-commerce ufficiale",
-    "Query 3 per angolazione differente"
+  "brand": "Marca o N/D",
+  "category": "Gonna/Giacca/Scarpe/ecc.",
+  "search_terms": [
+    "Termine specifico 1",
+    "Termine generico 2",
+    "Termine in inglese 3"
   ]
 }`;
 
@@ -734,16 +731,18 @@ Rispondi ESCLUSIVAMENTE in formato JSON:
                 const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
                 const parsedVision = extractJson(responseText);
 
-                // 2. Query di ricerca online per trovare più immagini reali del modello esatto
-                const queries = parsedVision.search_queries || [
-                    `${parsedVision.brand || ''} ${productName} ${colorName} catalog photo`,
-                    `${parsedVision.model_keywords || productName} studio product photography`,
-                    `${productName} ${colorName} fashion e-commerce model shot`
-                ];
+                // Ricerca a cascata (Fallback)
+                const searchQueries = [
+                    ...parsedVision.search_terms,
+                    `${parsedVision.category || productName} ${colorName}`.trim(),
+                    `${productName} ${colorName}`.trim(),
+                    'clothing product fashion'
+                ].filter(Boolean);
 
-                const fetchAsBase64 = async (url) => {
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error("HTTP error " + res.status);
+                // Helper per caricare immagini trasformandole in Base64 rapidamente
+                const fetchImageAsBase64 = async (url) => {
+                    const res = await fetch(url, { mode: 'cors' });
+                    if (!res.ok) throw new Error("Fetch fallito");
                     const blob = await res.blob();
                     return new Promise((resolve) => {
                         const reader = new FileReader();
@@ -752,30 +751,74 @@ Rispondi ESCLUSIVAMENTE in formato JSON:
                     });
                 };
 
-                // Recuperiamo più immagini dai risultati per offrire più angolazioni/foto dello stesso articolo
+                // Tenta le varie sorgenti di immagini
                 const foundImages = [];
-                for (let i = 0; i < Math.min(queries.length, 3); i++) {
-                    const cleanQuery = encodeURIComponent(queries[i].replace(/[^a-zA-Z0-9\s]/g, ''));
-                    const searchUrl = `https://source.unsplash.com/800x800/?${cleanQuery}`;
+                for (const q of searchQueries) {
+                    if (foundImages.length >= 3) break;
+                    const cleanQ = encodeURIComponent(q.replace(/[^a-zA-Z0-9\s]/g, ''));
+                    
+                    // Unsplash Source API
                     try {
-                        const base64Img = await fetchAsBase64(searchUrl);
+                        const url = `https://source.unsplash.com/600x600/?${cleanQ}`;
+                        const base64Img = await fetchImageAsBase64(url);
                         if (base64Img && !foundImages.includes(base64Img)) {
                             foundImages.push(base64Img);
                         }
-                    } catch (e) {
-                        console.warn(`Tentativo ricerca ${i+1} non riuscito`, e);
+                    } catch (err) {
+                        // In caso di fallimento su CORS/Network tenta con fonte Wikimedia Commons API
+                        try {
+                            const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${cleanQ}&gsrnamespace=6&format=json&reqimages=1&origin=*`;
+                            const wRes = await fetch(wikiUrl);
+                            const wData = await wRes.json();
+                            if (wData.query && wData.query.pages) {
+                                const pages = Object.values(wData.query.pages);
+                                if (pages.length > 0 && pages[0].title) {
+                                    const imgTitle = encodeURIComponent(pages[0].title.replace('File:', ''));
+                                    const imgRealUrl = `https://commons.wikimedia.org/wiki/Special:FilePath/${imgTitle}?width=600`;
+                                    const base64Wiki = await fetchImageAsBase64(imgRealUrl);
+                                    if (base64Wiki && !foundImages.includes(base64Wiki)) {
+                                        foundImages.push(base64Wiki);
+                                    }
+                                }
+                            }
+                        } catch (wErr) {
+                            console.warn("Fallback fallito per query:", q);
+                        }
                     }
                 }
 
                 generatedAiPhotos = foundImages;
 
             } catch (e) {
-                console.error("Errore durante la ricerca online del modello esatto:", e);
+                console.error("Errore durante la ricerca foto:", e);
             }
 
-            if (generatedAiPhotos.length === 0) {
-                previewsContainer.innerHTML = `<div class="col-span-full text-center text-xs text-amber-400 py-3 font-medium">Nessuna foto di catalogo aggiuntiva trovata online per questo modello esatto.</div>`;
-                showToast("Ricerca completata: nessuna foto aggiuntiva trovata.", true);
+            // Se non sono state trovate foto sul web, usiamo la foto originale dell'utente come base garantita
+            if (generatedAiPhotos.length === 0 && loadedPhotos.length > 0) {
+                generatedAiPhotos = loadedPhotos.map(p => p.dataUrl);
+                
+                const searchGoogleUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(productName + ' ' + colorName)}`;
+
+                previewsContainer.innerHTML = `
+                    <div class="col-span-full space-y-3">
+                        <div class="p-3 bg-slate-950 border border-amber-500/30 rounded-xl text-center space-y-1">
+                            <p class="text-xs text-amber-300 font-semibold">Foto esatte di catalogo non trovate direttamente sui server Unsplash/Wikimedia.</p>
+                            <p class="text-[10px] text-slate-400">Sono state conservate e ottimizzate le foto caricate. Puoi effettuare una ricerca visiva diretta su Google:</p>
+                            <a href="${searchGoogleUrl}" target="_blank" class="inline-flex items-center gap-1 mt-1 text-xs text-brand-400 underline font-bold">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Cerca foto ${productName} su Google Images
+                            </a>
+                        </div>
+                        <div class="grid grid-cols-2 xs:grid-cols-3 gap-2">
+                            ${generatedAiPhotos.map((imgUrl, idx) => `
+                                <div class="relative group rounded-xl overflow-hidden border border-slate-700 bg-slate-900 aspect-square shadow-lg">
+                                    <img src="${imgUrl}" class="w-full h-full object-cover">
+                                    <div class="absolute top-1 left-1 bg-brand-600 text-white font-bold text-[8px] px-1.5 py-0.5 rounded">Foto Originale</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                showToast("Utilizzate le foto del prodotto caricate.");
             } else {
                 previewsContainer.innerHTML = generatedAiPhotos.map((imgUrl, idx) => `
                     <div class="relative group rounded-xl overflow-hidden border border-purple-500/50 bg-slate-900 aspect-square shadow-lg">
@@ -787,7 +830,7 @@ Rispondi ESCLUSIVAMENTE in formato JSON:
                         </a>
                     </div>
                 `).join('');
-                showToast(`Trovate ${generatedAiPhotos.length} foto online del modello esatto!`);
+                showToast(`Trovate ${generatedAiPhotos.length} foto online!`);
             }
 
             btnGen.disabled = false;
